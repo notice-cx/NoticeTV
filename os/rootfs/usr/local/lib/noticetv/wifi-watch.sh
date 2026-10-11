@@ -25,9 +25,9 @@ while sleep "$INTERVAL"; do
     misses=$((misses + 1))
     if [ "$misses" -ge "$MISSES_BEFORE_RECONNECT" ]; then
         echo "no answer from the gateway (${gateway:-no default route}) for $((misses * INTERVAL))s: reconnecting $IFACE"
-        ifdown "$IFACE"
-        sleep 1
-        ifup "$IFACE"
+        # Through ifup@'s own service, so the DHCP client it starts lives there. Started from
+        # this service, it would die whenever the watcher restarts and take the address with it.
+        systemctl restart "ifup@$IFACE.service"
         misses=0
     fi
 done
