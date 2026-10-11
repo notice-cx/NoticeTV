@@ -1,4 +1,4 @@
-# Building the NoticeTV OS image
+# Building NoticeTV OS and its installer
 
 `image/build.sh` turns DietPi's official x86_64 UEFI image into a NoticeTV OS image that boots
 straight into the kiosk, with nothing left to install:
@@ -20,10 +20,34 @@ straight into the kiosk, with nothing left to install:
 and in `noticetv-bake/` DietPi's first-run logs, the journal of the second boot and
 `screenshot.png` of the kiosk.
 
+## The installer
+
+`installer/build.sh dist/noticetv-os-<version>-x86_64.img.xz` makes
+`dist/noticetv-installer-<version>-x86_64.img`: a USB stick image with one FAT32 EFI partition
+holding
+
+- Debian's signed boot chain (shim as `EFI/BOOT/BOOTX64.EFI`, the removable-media GRUB, the
+  kernel), so it boots with Secure Boot on;
+- an initramfs (`installer/initramfs`, Debian's own with `MODULES=most` for drivers) whose
+  `noticetv-installer` script is the installer: it lists the drives it can use (never the stick
+  itself, never one too small), asks before erasing, writes the image, checks it against its
+  SHA-256, adds a NoticeTV boot entry first in the boot order and restarts;
+- the NoticeTV OS image with its size and checksum.
+
+It has to run on Debian 13, for Debian's signed shim, GRUB and kernel; elsewhere, in a
+`debian:trixie` container (`--platform linux/amd64` on an Apple Silicon Mac), with the packages
+listed at the top of the script.
+
+`installer/test.sh dist/noticetv-installer-<version>-x86_64.img` tests it end to end in QEMU with
+Secure Boot on: the installer boots from a USB stick onto a blank NVMe drive (in a test mode with
+no questions), then that drive boots alone, and the test checks that NoticeTV grew into the drive
+and started its kiosk. Its logs and the final screen are in `dist/installer-test/`.
+
 ## On GitHub
 
-The **Image** workflow builds the image on demand from the Actions tab and for every `v*` tag,
-attaching it to the tag's release. Its runner has KVM, so the build VM runs at native speed.
+The **Image** workflow builds the image and the installer, and tests the installer, on demand
+from the Actions tab and for every `v*` tag, attaching both to the tag's release. Its runner has
+KVM, so the build VMs run at native speed.
 
 ## On your own machine
 

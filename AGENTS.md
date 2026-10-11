@@ -18,10 +18,11 @@ works.
 | `os/rootfs/` | files installed verbatim onto the box, at the same paths |
 | `os/noticetv.conf.example` | every setting a box can have, with its default |
 | `image/` | the NoticeTV OS image build: DietPi's image, baked in a VM with the layer installed |
-| `.github/workflows/image.yml` | builds the image on demand and for `v*` tags, attaching it to the release |
+| `installer/` | the USB installer: Debian's signed boot chain and an initramfs that writes the image to a drive; its end-to-end test |
+| `.github/workflows/image.yml` | builds the image and installer, tests the installer, attaches both to `v*` releases |
 | `scripts/` | tools run from a developer's machine, e.g. `install-over-ssh.sh` |
 | `brand/` | the boot splash source: the lockup page, its font, the renderer |
-| `docs/` | tested hardware and its quirks; troubleshooting; how the image is built |
+| `docs/` | tested hardware and its quirks; troubleshooting; how the image and installer are built |
 
 ## Conventions
 

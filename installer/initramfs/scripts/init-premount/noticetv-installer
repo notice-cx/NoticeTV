@@ -1,0 +1,148 @@
+#!/bin/sh
+# The NoticeTV installer: writes NoticeTV OS from the USB stick it booted from to the computer's
+# internal drive, then restarts into it. Runs in the installer's initramfs, which has no root
+# filesystem to go on to, so it never returns on the installer's own boot.
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in
+prereqs)
+    prereqs
+    exit 0
+    ;;
+esac
+
+grep -qw noticetv.installer /proc/cmdline || exit 0
+# The end-to-end test boots with noticetv.installer=test: the first drive, no questions, and a
+# power-off instead of a restart so the test can go on to boot the installed drive.
+TEST=""
+if grep -q 'noticetv.installer=test' /proc/cmdline; then
+    TEST=yes
+fi
+
+set -o pipefail
+dmesg -n 1
+FILES=/installer/noticetv
+
+say() { printf '  %s\n' "$*"; }
+screen() { printf '\033[2J\033[H\n'; say "NoticeTV installer"; echo; }
+
+stop_with() {  # stop_with MESSAGE...: show it, then turn off on Enter
+    for line in "$@"; do say "$line"; done
+    echo
+    if [ -z "$TEST" ]; then
+        say "Press Enter to turn off the computer."
+        read -r _
+    fi
+    poweroff -f
+}
+
+# ---- the installer's files, on the USB stick it booted from
+screen
+mkdir -p /installer
+n=0
+until DEV=$(blkid -L NOTICETVUSB 2>/dev/null) && [ -n "$DEV" ]; do
+    if [ $n -ge 30 ]; then
+        stop_with "This USB stick is missing the installer's files." \
+            "Write the NoticeTV installer to it again, then start the computer from it."
+    fi
+    sleep 1
+    n=$((n + 1))
+done
+mount -t vfat -o ro "$DEV" /installer || stop_with "The installer's files on this USB stick can't be read." \
+    "Write the NoticeTV installer to it again, then start the computer from it."
+IMAGE=$(ls "$FILES"/noticetv-os-*.img.xz)
+NEED=$(cat "$FILES/image-bytes")
+SOURCE=$(basename "$(readlink -f "/sys/class/block/${DEV#/dev/}/..")")
+
+# ---- the drives it can go on: not the USB stick itself, and big enough
+COUNT=0
+for block in /sys/block/*; do
+    name=${block##*/}
+    case "$name" in
+    loop* | ram* | zram* | sr* | fd* | dm-* | md* | nbd* | mmcblk*boot* | mmcblk*rpmb) continue ;;
+    esac
+    [ "$name" = "$SOURCE" ] && continue
+    bytes=$(($(cat "$block/size") * 512))
+    [ "$bytes" -ge "$NEED" ] || continue
+    model=$(cat "$block/device/model" "$block/device/name" 2>/dev/null | head -n 1 | sed 's/[[:space:]]*$//')
+    COUNT=$((COUNT + 1))
+    eval "DRIVE_$COUNT=\$name"
+    eval "LABEL_$COUNT=\"\${model:-\$name}  (\$((bytes / 1000000000)) GB)\""
+done
+if [ "$COUNT" -eq 0 ]; then
+    stop_with "No drive was found to install NoticeTV on." \
+        "NoticeTV needs an internal drive of at least $(((NEED + 999999999) / 1000000000)) GB."
+fi
+
+CHOICE=1
+if [ "$COUNT" -gt 1 ] && [ -z "$TEST" ]; then
+    while :; do
+        screen
+        say "Choose the drive to install NoticeTV on:"
+        echo
+        i=1
+        while [ $i -le "$COUNT" ]; do
+            eval "say \"  \$i  \$LABEL_$i\""
+            i=$((i + 1))
+        done
+        echo
+        printf '  Type its number and press Enter: '
+        read -r CHOICE
+        case "$CHOICE" in
+        '' | *[!0-9]*) ;;
+        *) [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le "$COUNT" ] && break ;;
+        esac
+    done
+fi
+eval "TARGET=/dev/\$DRIVE_$CHOICE LABEL=\$LABEL_$CHOICE"
+
+if [ -z "$TEST" ]; then
+    screen
+    say "NoticeTV will be installed on:"
+    echo
+    say "    $LABEL"
+    echo
+    say "This erases everything on that drive."
+    echo
+    say "Press Enter to install. To cancel, turn off the computer."
+    read -r _
+fi
+
+# ---- write, check, and make it the computer's first boot choice
+screen
+say "Installing NoticeTV on $LABEL"
+echo
+# Old partition tables at either end of the drive must not outlive the install.
+wipefs -a "$TARGET" >/dev/null 2>&1
+xz -dc -T0 -v "$IMAGE" | dd of="$TARGET" bs=4194304 2>/dev/null \
+    || stop_with "Writing to the drive failed." "Check the drive, then start the computer from this USB stick again."
+sync
+echo
+say "Checking the installation..."
+echo 3 > /proc/sys/vm/drop_caches
+WRITTEN=$(head -c "$NEED" "$TARGET" | sha256sum | cut -d ' ' -f 1)
+if [ "$WRITTEN" != "$(cat "$FILES/image-sha256")" ]; then
+    stop_with "The drive doesn't hold what was written to it." \
+        "Start the computer from this USB stick to try again. If it fails again, the drive may be faulty."
+fi
+
+# A boot entry for NoticeTV, first in the boot order, so a USB stick left in doesn't start the
+# installer again. Firmware that refuses NVRAM writes still finds NoticeTV on its own.
+if [ -d /sys/firmware/efi ]; then
+    mountpoint -q /sys/firmware/efi/efivars || mount -t efivarfs efivarfs /sys/firmware/efi/efivars
+    for entry in $(efibootmgr 2>/dev/null | sed -n 's/^Boot\([0-9A-Fa-f]\{4\}\)\*\{0,1\} NoticeTV.*/\1/p'); do
+        efibootmgr -q -b "$entry" -B
+    done
+    efibootmgr -q -c -d "$TARGET" -p 1 -L NoticeTV -l '\EFI\debian\shimx64.efi' 2>/dev/null || true
+fi
+umount /installer
+
+screen
+say "NoticeTV is installed."
+echo
+if [ -n "$TEST" ]; then
+    poweroff -f
+fi
+say "Remove the USB stick. The computer restarts in 10 seconds."
+sleep 10
+reboot -f

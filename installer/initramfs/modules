@@ -1,0 +1,19 @@
+# Beyond MODULES=most: reading the installer's own FAT partition, writing NVRAM boot entries,
+# and the drives, USB controllers and keyboards of small PCs.
+vfat
+nls_cp437
+nls_ascii
+nls_utf8
+efivarfs
+usb_storage
+uas
+xhci_pci
+ehci_pci
+nvme
+ahci
+sd_mod
+mmc_block
+sdhci_pci
+sdhci_acpi
+usbhid
+hid_generic

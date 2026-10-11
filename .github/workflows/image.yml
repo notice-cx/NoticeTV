@@ -1,5 +1,5 @@
-# Build the NoticeTV OS image: on demand from the Actions tab, and for every v* tag, where the
-# image is attached to the tag's GitHub release.
+# Build the NoticeTV OS image and its USB installer, and test the installer end to end: on demand
+# from the Actions tab, and for every v* tag, where both are attached to the tag's GitHub release.
 name: Image
 
 on:
@@ -33,7 +33,20 @@ jobs:
       - name: Build the image
         run: image/build.sh
 
-      - name: Keep the image and the build VM's logs
+      # In Debian itself: the installer boots through Debian's signed shim, GRUB and kernel.
+      - name: Build the installer
+        run: |
+          docker run --rm -v "$PWD":/src -w /src debian:trixie sh -c '
+            apt-get update -qq &&
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+              linux-image-amd64 initramfs-tools busybox xz-utils efibootmgr util-linux \
+              shim-signed grub-efi-amd64-signed dosfstools mtools gdisk zstd >/dev/null &&
+            installer/build.sh dist/noticetv-os-*-x86_64.img.xz'
+
+      - name: Test the installer with Secure Boot on
+        run: WORK="$RUNNER_TEMP" installer/test.sh dist/noticetv-installer-*-x86_64.img
+
+      - name: Keep the image, the installer and the build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -41,11 +54,13 @@ jobs:
           path: dist/
           compression-level: 0  # the image is already xz-compressed
 
-      - name: Attach the image to the release
+      - name: Attach the installer and the image to the release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
             || gh release create "$GITHUB_REF_NAME" --title "NoticeTV OS $GITHUB_REF_NAME" --generate-notes
-          gh release upload "$GITHUB_REF_NAME" --clobber dist/noticetv-os-*.img.xz dist/noticetv-os-*.img.xz.sha256
+          gh release upload "$GITHUB_REF_NAME" --clobber \
+            dist/noticetv-installer-*.img dist/noticetv-installer-*.img.sha256 \
+            dist/noticetv-os-*.img.xz dist/noticetv-os-*.img.xz.sha256
