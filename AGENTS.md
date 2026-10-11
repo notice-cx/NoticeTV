@@ -14,24 +14,26 @@ works.
 
 | Path | Owns |
 |---|---|
-| `os/install.sh` | the installer: idempotent, run as root on the box |
+| `os/install.sh` | installs the layer: idempotent, run as root on the box |
 | `os/rootfs/` | files installed verbatim onto the box, at the same paths |
 | `os/noticetv.conf.example` | every setting a box can have, with its default |
+| `image/` | the NoticeTV OS image build: DietPi's image, baked in a VM with the layer installed |
+| `.github/workflows/image.yml` | builds the image on demand and for `v*` tags, attaching it to the release |
 | `scripts/` | tools run from a developer's machine, e.g. `install-over-ssh.sh` |
 | `brand/` | the boot splash source: the lockup page, its font, the renderer |
-| `docs/` | tested hardware and its quirks; troubleshooting |
+| `docs/` | tested hardware and its quirks; troubleshooting; how the image is built |
 
 ## Conventions
 
 - **Box scripts are POSIX sh** and run under dash: no bashisms (`local` is fine).
-- **The installer converges.** Running it twice changes nothing the second time; a step that
+- **`os/install.sh` converges.** Running it twice changes nothing the second time; a step that
   changes boot (GRUB, initramfs) does so only when its inputs changed, and says a reboot is needed.
 - **Nothing about one installation lives in the repo**: no IP addresses, hostnames, Wi-Fi names,
   dashboard URLs or time zones. Those are settings in `/etc/noticetv/noticetv.conf` on the box.
   Defaults are defined once, in `os/rootfs/usr/local/lib/noticetv/lib.sh`; the example file
   documents them.
 - **Names**: every unit and config file this layer adds carries the `noticetv-` prefix, so
-  `ls /etc/systemd/system/noticetv-*` lists all of it. A file the installer generates says so in
+  `ls /etc/systemd/system/noticetv-*` lists all of it. A file `os/install.sh` generates says so in
   its first line.
 - **Hardware quirks are documented with their evidence** in `docs/hardware.md`: the symptom, the
   cause and a source (a kernel thread, a bug report).

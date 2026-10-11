@@ -11,7 +11,9 @@ STATUSBAR_CHANGED=no
 needs_reboot() { REBOOT_REASONS="$REBOOT_REASONS
   - $1"; }
 step() { echo "==> $*"; }
-is_intel() { grep -q GenuineIntel /proc/cpuinfo; }
+# NOTICETV_PLATFORM=intel installs the Intel drivers and firmware regardless of this machine's CPU:
+# the image build runs in a VM on whatever CPU the build server has.
+is_intel() { [ "${NOTICETV_PLATFORM:-}" = intel ] || grep -q GenuineIntel /proc/cpuinfo; }
 dietpi_installed() { grep -q "^aSOFTWARE_INSTALL_STATE\[$1\]=2" /boot/dietpi/.installed; }
 
 # Set KEY=VALUE in /boot/dietpi.txt, escaping the characters sed would treat as special.

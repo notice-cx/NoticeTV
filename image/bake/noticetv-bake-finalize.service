@@ -1,0 +1,10 @@
+[Unit]
+Description=NoticeTV image build: check, clean up and power off the build VM
+
+[Service]
+# simple, not oneshot: the script waits for the kiosk, which must not hold up multi-user.target.
+Type=simple
+ExecStart=/usr/local/lib/noticetv/bake-finalize.sh
+
+[Install]
+WantedBy=multi-user.target

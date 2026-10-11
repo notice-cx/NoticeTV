@@ -1,0 +1,28 @@
+# /boot/dietpi.txt settings for the NoticeTV OS image (KEY=VALUE, applied by image/build.sh).
+# DietPi's first boot runs unattended with these, installs the Chromium kiosk, then runs
+# /boot/Automation_Custom_Script.sh, which installs the NoticeTV layer.
+
+AUTO_SETUP_AUTOMATED=1
+SURVEY_OPTED_IN=0
+
+AUTO_SETUP_NET_HOSTNAME=noticetv
+AUTO_SETUP_LOCALE=C.UTF-8
+AUTO_SETUP_KEYBOARD_LAYOUT=us
+AUTO_SETUP_TIMEZONE=UTC
+
+AUTO_SETUP_NET_ETHERNET_ENABLED=1
+AUTO_SETUP_NET_WIFI_ENABLED=1
+# A box boots before anyone has given it a network; it must not wait for one.
+AUTO_SETUP_BOOT_WAIT_FOR_NETWORK=0
+
+# No SSH server: an appliance on someone else's network has no business listening for logins.
+AUTO_SETUP_SSH_SERVER_INDEX=0
+# Logs on disk, not DietPi's RAM log: NoticeTV keeps a persistent journal.
+AUTO_SETUP_LOGGING_INDEX=0
+AUTO_SETUP_SWAPFILE_SIZE=0
+
+# Chromium, started as a kiosk on boot.
+AUTO_SETUP_INSTALL_SOFTWARE_ID=113
+AUTO_SETUP_AUTOSTART_TARGET_INDEX=11
+AUTO_SETUP_AUTOSTART_LOGIN_USER=root
+SOFTWARE_CHROMIUM_AUTOSTART_URL=file:///usr/share/noticetv/start/index.html
