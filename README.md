@@ -21,7 +21,8 @@ clock.
   needs it.
 - **Runs fanless.** An optional power profile caps the processor's power so a passively cooled
   box holds a steady temperature under load.
-- **Shows its vitals.** A status bar in the corner: network, temperature, power, load, uptime.
+- **Shows its vitals.** A status bar in the corner, under the NoticeTV mark: network,
+  temperature, power, load, memory, disk and uptime.
 
 Status: early. NoticeTV OS runs the maintainer's wall display; scan-to-set-up (a QR code on the
 screen that opens a settings page on your phone) is in development.
@@ -52,4 +53,5 @@ box rebooted, seeing the boot messages behind the splash.
 ## License
 
 NoticeTV is licensed under the [GNU AGPL v3](LICENSE). The Stack Sans Notch font in
-`brand/fonts` is licensed under the SIL Open Font License 1.1.
+`brand/fonts` is licensed under the SIL Open Font License 1.1, and the
+[Lucide](https://lucide.dev) icons in `brand/icons` under the ISC License.

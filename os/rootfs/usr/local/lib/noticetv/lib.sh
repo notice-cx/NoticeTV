@@ -11,8 +11,6 @@ POWER_PROFILE=stock
 POWER_CAP_LONG_W=6
 POWER_CAP_SHORT_W=10
 STATUSBAR=yes
-STATUSBAR_CLOCK_TZ=
-STATUSBAR_CLOCK_LABEL=
 STATUSBAR_WAN_IP=no
 if [ -r /etc/noticetv/noticetv.conf ]; then
     . /etc/noticetv/noticetv.conf

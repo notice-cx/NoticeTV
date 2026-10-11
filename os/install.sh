@@ -7,6 +7,7 @@ set -eu
 
 HERE=$(cd "$(dirname "$0")" && pwd)
 REBOOT_REASONS=""
+STATUSBAR_CHANGED=no
 needs_reboot() { REBOOT_REASONS="$REBOOT_REASONS
   - $1"; }
 step() { echo "==> $*"; }
@@ -40,6 +41,11 @@ remove_earlier_layout() {
         /etc/systemd/system.conf.d/watchdog.conf /etc/systemd/journald.conf.d/persistent.conf
 }
 
+# Width and height of a PNG, from its IHDR chunk.
+png_size() {
+    od -A n -t u1 -j 16 -N 8 "$1" | awk '{print $1*16777216 + $2*65536 + $3*256 + $4, $5*16777216 + $6*65536 + $7*256 + $8}'
+}
+
 # The status bar's conky config. Laid out for a 3840px panel and scaled to DISPLAY_WIDTH;
 # each field gets a fixed-width column so values changing length never make the bar jitter.
 write_statusbar_conf() {
@@ -55,21 +61,32 @@ write_statusbar_conf() {
         text="$text$2"
         x=$((x + $1))
     }
-    add 220 "\${color 9a8cc9}\${execi 5 $F clock}\${color}"
-    add 200 "\${color e8b04c}\${execi 30 $F ip}\${color}"
+    # The NoticeTV lockup, rendered for a 3840px panel and scaled with it. conky places images
+    # from the corner of the text area; 6px down centres it on the text's capitals.
+    LOCKUP=/usr/share/noticetv/statusbar-lockup.png
+    # shellcheck disable=SC2046  # png_size prints "width height"
+    set -- $(png_size "$LOCKUP")
+    add 205 "\${image $LOCKUP -p 0,$(px 6) -s $(px "$1")x$(px "$2")}"
+    # Each field: its icon (brand/render.sh), then the value. Icons are images, 7px down to centre
+    # them on the text: an icon font would shift conky's baseline at every font switch. conky
+    # measures images from inside border_inner_margin but goto from the window's edge, hence -14.
+    field() {  # field WIDTH_AT_4K ICON VALUE
+        add "$1" "\${image /usr/share/noticetv/icons/$2.png -p $(px $((x - 14))),$(px 7) -s $(px 26)x$(px 26)}\${goto $(px $((x + 40)))}$3"
+    }
+    field 225 ip "\${color e8b04c}\${execi 30 $F ip}\${color}"
     if [ "$STATUSBAR_WAN_IP" = yes ]; then
-        add 205 "\${color 6fb3d2}\${execi 300 $F wan}\${color}"
+        field 235 wan "\${color 6fb3d2}\${execi 300 $F wan}\${color}"
     fi
     if [ -d /sys/class/net/wlan0/wireless ]; then
-        add 165 "wifi \${wireless_link_qual_perc wlan0}%"
+        field 125 wifi "\${wireless_link_qual_perc wlan0}%"
     fi
-    add 105 "\${execi 5 $F temp}"
-    add 105 "\${execi 5 $F watts}"
-    add 160 "load \${loadavg 1}"
-    add 155 "ram \${memperc}%"
-    add 180 "disk \${fs_free /}"
-    add 285 "up \${uptime_short}"
-    cat > /etc/noticetv/statusbar.conky << EOF
+    field 130 temp "\${execi 5 $F temp}"
+    field 125 watts "\${execi 5 $F watts}"
+    field 125 load "\${loadavg 1}"
+    field 120 ram "\${memperc}%"
+    field 165 disk "\${fs_free /}"
+    field 160 uptime "\${uptime_short}"
+    cat > /etc/noticetv/statusbar.conky.new << EOF
 -- Written by NoticeTV install.sh from /etc/noticetv/noticetv.conf; edits here are overwritten.
 conky.config = {
     own_window = true,
@@ -95,6 +112,13 @@ conky.config = {
 }
 conky.text = [[$text]]
 EOF
+    # conky doesn't reload its config by itself: note a change so the bar is restarted.
+    if cmp -s /etc/noticetv/statusbar.conky.new /etc/noticetv/statusbar.conky; then
+        rm /etc/noticetv/statusbar.conky.new
+    else
+        mv /etc/noticetv/statusbar.conky.new /etc/noticetv/statusbar.conky
+        STATUSBAR_CHANGED=yes
+    fi
 }
 
 [ "$(id -u)" = 0 ] || { echo "install.sh: run as root" >&2; exit 1; }
@@ -201,6 +225,9 @@ systemctl enable --now --quiet noticetv-health.timer noticetv-kiosk-restart.time
 if [ "$STATUSBAR" = yes ]; then
     systemctl enable --quiet noticetv-statusbar.service
     systemctl enable --now --quiet noticetv-statusbar-raise.timer
+    if [ "$STATUSBAR_CHANGED" = yes ] && systemctl is-active --quiet noticetv-statusbar.service; then
+        systemctl restart noticetv-statusbar.service
+    fi
 else
     systemctl disable --now --quiet noticetv-statusbar.service noticetv-statusbar-raise.timer
 fi

@@ -21,11 +21,8 @@
 #POWER_CAP_LONG_W=6
 #POWER_CAP_SHORT_W=10
 
-# The status bar in the bottom-right corner: network, temperature, power, load, uptime.
+# The status bar in the bottom-right corner: the NoticeTV mark, then network, temperature,
+# power, load and uptime.
 #STATUSBAR=yes
-# A second clock at the start of the bar, e.g. STATUSBAR_CLOCK_TZ=Europe/London STATUSBAR_CLOCK_LABEL=LDN.
-# Empty shows the local time.
-#STATUSBAR_CLOCK_TZ=
-#STATUSBAR_CLOCK_LABEL=
 # Show the public IP address, looked up from api.ipify.org every 5 minutes.
 #STATUSBAR_WAN_IP=no
