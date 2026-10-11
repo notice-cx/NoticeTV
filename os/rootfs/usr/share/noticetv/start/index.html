@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- The page a NoticeTV shows before it has a dashboard: the boot splash's lockup at the same
+     size and place, so the splash hands over to it without a visible change. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NoticeTV</title>
+<style>
+html, body { margin: 0; height: 100%; background: #0d1019; overflow: hidden; }
+body { display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+<img id="lockup" src="file:///usr/share/plymouth/themes/noticetv/noticetv.png" alt="NoticeTV">
+<script>
+  // Plymouth draws the PNG one image pixel per screen pixel; match it at any scale factor.
+  const lockup = document.getElementById("lockup");
+  lockup.onload = () => { lockup.style.width = lockup.naturalWidth / devicePixelRatio + "px"; };
+</script>
+</body>
+</html>
