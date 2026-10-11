@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- Why NoticeTV: what it does for the person who owns the screen. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="common.css">
+<style>
+.card { width: 1020px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 26px; }
+.feature { padding: 22px 20px 20px; }
+.feature .icon { display: block; width: 34px; height: 34px; }
+.feature h3 { font-size: 19px; font-weight: 600; margin: 14px 0 0; letter-spacing: -0.01em; }
+.feature p { font-size: 15px; color: var(--muted); margin: 6px 0 0; line-height: 1.4; text-wrap: pretty; }
+</style>
+</head>
+<body>
+<div class="card">
+  <p class="title">Why NoticeTV</p>
+  <p class="subtitle">A screen that runs itself</p>
+  <div class="grid">
+    <div class="feature tile">
+      <!-- Lucide tv (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg></span>
+      <h3>Always on screen</h3>
+      <p>Power it on and your dashboard comes up</p>
+    </div>
+    <div class="feature tile">
+      <!-- Lucide rotate-ccw (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>
+      <h3>Fixes itself</h3>
+      <p>Recovers from a freeze, a crash or a Wi-Fi drop</p>
+    </div>
+    <div class="feature tile">
+      <!-- Lucide shield-check (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <h3>Updates itself</h3>
+      <p>Security updates install in the background</p>
+    </div>
+    <div class="feature tile">
+      <!-- Lucide usb (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><circle cx="10" cy="7" r="1"/><circle cx="4" cy="20" r="1"/><path d="M4.7 19.3 19 5"/><path d="m21 3-3 1 2 2Z"/><path d="M9.26 7.68 5 12l2 5"/><path d="m10 14 5 2 3.5-3.5"/><path d="m18 12 1-1 1 1-1 1Z"/></svg></span>
+      <h3>Installs from USB</h3>
+      <p>Type your Wi-Fi and your page, and it's done</p>
+    </div>
+    <div class="feature tile">
+      <!-- Lucide code (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+      <h3>Free and open source</h3>
+      <p>No price, no subscription, no account</p>
+    </div>
+    <div class="feature tile">
+      <!-- Lucide layers (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg></span>
+      <h3>Built on Linux</h3>
+      <p>Debian Linux, in place of Windows</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

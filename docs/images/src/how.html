@@ -1,0 +1,48 @@
+<!doctype html>
+<!-- How NoticeTV works: your dashboard, the mini PC running NoticeTV, your TV. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="common.css">
+<style>
+.card { width: 1020px; }
+.flow { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; gap: 10px; align-items: center; margin-top: 26px; }
+.part { padding: 22px 20px 20px; height: 100%; box-sizing: border-box; }
+.part.product { border-color: var(--accent); }
+.part .icon { display: block; width: 40px; height: 40px; }
+.part h3 { font-size: 19px; font-weight: 600; margin: 16px 0 0; letter-spacing: -0.01em; }
+.part p { font-size: 15px; color: var(--muted); margin: 6px 0 0; line-height: 1.4; text-wrap: pretty; }
+.arrow { width: 28px; height: 28px; color: var(--muted); }
+.arrow svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<div class="card">
+  <p class="title">How NoticeTV works</p>
+  <p class="subtitle">It takes the place of Windows on a small PC behind the TV</p>
+  <div class="flow">
+    <div class="part tile">
+      <!-- Lucide layout-dashboard (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>
+      <h3>Your dashboard</h3>
+      <p>Home Assistant, Grafana, the NoticeOS Wall or any other web page</p>
+    </div>
+    <!-- Lucide arrow-right (ISC) -->
+    <span class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+    <div class="part tile product">
+      <!-- Lucide pc-case (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M15 14h.01"/><path d="M9 6h6"/><path d="M9 10h6"/></svg></span>
+      <h3>A mini PC running NoticeTV</h3>
+      <p>NoticeTV replaces Windows and opens your page full screen</p>
+    </div>
+    <span class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+    <div class="part tile">
+      <!-- Lucide tv (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg></span>
+      <h3>Your TV</h3>
+      <p>Shows it from the moment it powers on, around the clock</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

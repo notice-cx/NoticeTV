@@ -32,7 +32,9 @@ sed -e "s|@INSTALLER@|file://$SCREENS/confirm.png|" -e "s|@TV@|file://$TV|" src/
 shot install.render.html noticetv-install.png 1100 500 2
 sed -e "s|@WIFI@|file://$SCREENS/wifi.png|" -e "s|@DASHBOARD@|file://$SCREENS/dashboard.png|" src/setup.html > src/setup.render.html
 shot setup.render.html noticetv-setup.png 1000 600 2
+shot how.html noticetv-how.png 1100 600 2
+shot features.html noticetv-features.png 1100 800 2
 shot configure.html noticetv-configure.png 840 500 2
 shot statusbar.html noticetv-statusbar.png 1100 300 2
 
-echo "rendered: noticetv-hero.jpg noticetv-install.png noticetv-setup.png noticetv-configure.png noticetv-statusbar.png"
+echo "rendered: noticetv-hero.jpg noticetv-how.png noticetv-features.png noticetv-install.png noticetv-setup.png noticetv-configure.png noticetv-statusbar.png"
