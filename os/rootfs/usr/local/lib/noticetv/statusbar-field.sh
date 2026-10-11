@@ -9,10 +9,13 @@ ip)
 wan)
     curl -sf -m 3 https://api.ipify.org || echo n/a
     ;;
+# A box without the sensor (a VM, some boards) shows a dash rather than a broken reading.
 temp)
-    echo "$(cpu_temp)°C"
+    t=$(cpu_temp)
+    [ "$t" = na ] && echo "–" || echo "${t}°C"
     ;;
 watts)
-    echo "$(rapl_watts /run/noticetv-statusbar.rapl)W"
+    w=$(rapl_watts /run/noticetv-statusbar.rapl)
+    [ "$w" = na ] && echo "–" || echo "${w}W"
     ;;
 esac
