@@ -30,8 +30,12 @@ holding
   kernel), so it boots with Secure Boot on;
 - an initramfs (`installer/initramfs`, Debian's own with `MODULES=most` for drivers) whose
   `noticetv-installer` script is the installer: it lists the drives it can use (never the stick
-  itself, never one too small), asks before erasing, writes the image, checks it against its
-  SHA-256, adds a NoticeTV boot entry first in the boot order and restarts;
+  itself, never one too small), asks before erasing, asks for the Wi-Fi network and password and
+  the dashboard's address, writes the image, checks it against its SHA-256, writes the settings
+  into the installed system (the Wi-Fi key as `wpa_passphrase`'s hash, in DietPi's Wi-Fi
+  database and `wpa_supplicant.conf`), adds a NoticeTV boot entry first in the boot order and
+  restarts. On a drive that already has NoticeTV it can change those settings without
+  reinstalling;
 - the NoticeTV OS image with its size and checksum.
 
 It has to run on Debian 13, for Debian's signed shim, GRUB and kernel; elsewhere, in a
@@ -39,9 +43,11 @@ It has to run on Debian 13, for Debian's signed shim, GRUB and kernel; elsewhere
 listed at the top of the script.
 
 `installer/test.sh dist/noticetv-installer-<version>-x86_64.img` tests it end to end in QEMU with
-Secure Boot on: the installer boots from a USB stick onto a blank NVMe drive (in a test mode with
-no questions), then that drive boots alone, and the test checks that NoticeTV grew into the drive
-and started its kiosk. Its logs and the final screen are in `dist/installer-test/`.
+Secure Boot on: the installer boots from a USB stick onto a blank NVMe drive (in a test mode that
+takes its answers from the kernel command line), then that drive boots alone, and the test checks
+that NoticeTV grew into the drive, started its kiosk, and holds the Wi-Fi network and dashboard it
+was given, with no password stored as typed. Its logs and the final screen are in
+`dist/installer-test/`.
 
 ## On GitHub
 

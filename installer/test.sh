@@ -1,7 +1,7 @@
 #!/bin/sh
 # End-to-end test of the installer, in QEMU with Secure Boot on: boot the installer from a USB
 # stick onto a blank 16 GB NVMe drive, then boot that drive alone, and check that NoticeTV grew
-# into the whole drive and started its kiosk.
+# into the whole drive, started its kiosk, and holds the Wi-Fi network and dashboard it was given.
 #   installer/test.sh dist/noticetv-installer-<version>-x86_64.img
 # Output in dist/installer-test/: both boots' serial logs and screen.ppm, the installed drive's
 # screen at the end. Needs Linux with qemu-system-x86_64, OVMF (with its Secure Boot variant),
@@ -43,12 +43,15 @@ QEMU="qemu-system-x86_64 -machine q35,smm=on $ACCEL -smp 2 -m 3072
     -device nvme,drive=drive,serial=NOTICETVTEST
     -nic user,model=e1000 -display none"
 
-# The test's own copy of the stick boots with noticetv.installer=test (no questions, a power-off
-# when done) and its console on the serial port.
+# The test's own copy of the stick boots with noticetv.installer=test (these answers instead of
+# questions, a power-off when done) and its console on the serial port.
+TEST_SSID=NoticeTVTest
+TEST_PASSWORD=noticetv-test-key
+TEST_DASHBOARD=https://example.com/
 cp "$INSTALLER" "$WORK/usb.img"
 USB_ESP="$WORK/usb.img@@1048576"
 mcopy -n -i "$USB_ESP" ::boot/grub/grub.cfg "$WORK/grub.cfg"
-sed -i 's/ noticetv.installer$/ noticetv.installer=test console=tty0 console=ttyS0,115200/' "$WORK/grub.cfg"
+sed -i "s| noticetv.installer\$| noticetv.installer=test noticetv.test.ssid=$TEST_SSID noticetv.test.password=$TEST_PASSWORD noticetv.test.dashboard=$TEST_DASHBOARD console=tty0 console=ttyS0,115200|" "$WORK/grub.cfg"
 grep -q 'noticetv.installer=test' "$WORK/grub.cfg" || fail "could not switch the installer to test mode"
 mcopy -o -i "$USB_ESP" "$WORK/grub.cfg" ::boot/grub/grub.cfg
 
@@ -69,9 +72,20 @@ $QEMU -serial file:"$OUT/boot-serial.log" -monitor pipe:"$WORK/monitor" &
 VM=$!
 sleep "$BOOT_SECONDS"
 kill -0 "$VM" 2>/dev/null || fail "the installed drive's VM stopped on its own; see $OUT/boot-serial.log"
-echo "screendump $PWD/$OUT/screen.ppm" > "$WORK/monitor.in"
+# QEMU runs in this script's directory, so the same relative or absolute path works for it.
+echo "screendump $OUT/screen.ppm" > "$WORK/monitor.in"
 sleep 5
-echo quit > "$WORK/monitor.in"
+# The power button, as a person would press it, so the system shuts down cleanly; quit only if it
+# hasn't within two minutes.
+echo system_powerdown > "$WORK/monitor.in"
+n=0
+while kill -0 "$VM" 2>/dev/null && [ $n -lt 120 ]; do
+    sleep 1
+    n=$((n + 1))
+done
+if kill -0 "$VM" 2>/dev/null; then
+    echo quit > "$WORK/monitor.in"
+fi
 wait "$VM" || true
 
 step "Check the installed drive"
@@ -81,7 +95,25 @@ DRIVE_SECTORS=$(($(stat -c %s "$WORK/drive.img") / 512))
 FIRST=$(sgdisk -i 2 "$WORK/drive.img" | awk '/^First sector:/{print $3}')
 dd if="$WORK/drive.img" of="$WORK/root.ext4" bs=4M iflag=skip_bytes,count_bytes \
     skip=$((FIRST * 512)) count=$(((LAST - FIRST + 1) * 512)) status=none
+# Whatever is still in the ext4 journal (a guest stopped mid-write) is invisible to debugfs:
+# replay it first.
+e2fsck -fy "$WORK/root.ext4" >/dev/null 2>&1 || true
 debugfs -R "stat /root/.config/chromium" "$WORK/root.ext4" 2>/dev/null | grep -q "Type: directory" \
     || fail "the kiosk never started on the installed drive; see $OUT/screen.ppm"
+installed() { debugfs -R "cat $1" "$WORK/root.ext4" 2>/dev/null; }
+installed /boot/dietpi.txt | grep -qx "SOFTWARE_CHROMIUM_AUTOSTART_URL=$TEST_DASHBOARD" \
+    || fail "the kiosk was not set to the dashboard address"
+installed /etc/noticetv/noticetv.conf | grep -qx "DASHBOARD_URL='$TEST_DASHBOARD'" \
+    || fail "noticetv.conf did not get the dashboard address"
+HEX_SSID=$(printf '%s' "$TEST_SSID" | od -A n -t x1 | tr -d ' \n')
+installed /etc/wpa_supplicant/wpa_supplicant.conf | grep -q "ssid=$HEX_SSID" \
+    || fail "wpa_supplicant.conf did not get the Wi-Fi network"
+installed /etc/wpa_supplicant/wpa_supplicant.conf | grep -Eq "psk=[0-9a-f]{64}$" \
+    || fail "wpa_supplicant.conf did not get the Wi-Fi key"
+installed /var/lib/dietpi/dietpi-wifi.db | grep -qx "aWIFI_SSID\[0\]='$TEST_SSID'" \
+    || fail "DietPi's Wi-Fi database did not get the network"
+if { installed /etc/wpa_supplicant/wpa_supplicant.conf; installed /var/lib/dietpi/dietpi-wifi.db; } | grep -q "$TEST_PASSWORD"; then
+    fail "the Wi-Fi password was stored as typed"
+fi
 rm -rf "$WORK"
-echo "the installer works: NoticeTV installed, grew into the drive and started its kiosk ($OUT/screen.ppm)"
+echo "the installer works: NoticeTV installed with its Wi-Fi and dashboard, grew into the drive and started its kiosk ($OUT/screen.ppm)"

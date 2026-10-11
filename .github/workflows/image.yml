@@ -40,7 +40,7 @@ jobs:
             apt-get update -qq &&
             DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
               linux-image-amd64 initramfs-tools busybox xz-utils efibootmgr util-linux \
-              shim-signed grub-efi-amd64-signed dosfstools mtools gdisk zstd >/dev/null &&
+              shim-signed grub-efi-amd64-signed dosfstools mtools gdisk zstd wpasupplicant >/dev/null &&
             installer/build.sh dist/noticetv-os-*-x86_64.img.xz'
 
       - name: Test the installer with Secure Boot on

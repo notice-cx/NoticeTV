@@ -16,3 +16,5 @@ copy_exec /usr/sbin/blkid /sbin        # finds the USB stick by its label (busyb
 copy_exec /usr/bin/xz /usr/lib/noticetv/xz
 copy_exec /usr/sbin/wipefs /sbin       # clears old partition tables at both ends of the drive
 copy_exec /usr/bin/efibootmgr /bin     # puts NoticeTV first in the boot order
+# The Wi-Fi key as its 64-digit hash, so the password itself is never stored.
+copy_exec /usr/bin/wpa_passphrase /usr/lib/noticetv/wpa_passphrase

@@ -4,8 +4,8 @@
 #   installer/build.sh dist/noticetv-os-<version>-x86_64.img.xz
 # Output: dist/noticetv-installer-<version>-x86_64.img, to write to a USB stick of 2 GB or more.
 # Runs on Debian 13 with linux-image-amd64, initramfs-tools, busybox, xz-utils, efibootmgr,
-# util-linux, shim-signed, grub-efi-amd64-signed, dosfstools, mtools, gdisk and zstd: Debian's own
-# signed shim, GRUB and kernel are what let it boot with Secure Boot on.
+# util-linux, shim-signed, grub-efi-amd64-signed, dosfstools, mtools, gdisk, zstd and
+# wpasupplicant: Debian's own signed shim, GRUB and kernel are what let it boot with Secure Boot on.
 set -eu
 
 cd "$(dirname "$0")/.."

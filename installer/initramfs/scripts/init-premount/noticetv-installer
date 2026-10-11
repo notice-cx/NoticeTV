@@ -96,7 +96,47 @@ if [ "$COUNT" -gt 1 ] && [ -z "$TEST" ]; then
 fi
 eval "TARGET=/dev/\$DRIVE_$CHOICE LABEL=\$LABEL_$CHOICE"
 
-if [ -z "$TEST" ]; then
+# The installed system's root filesystem: partition 2 (sda -> sda2, nvme0n1 -> nvme0n1p2).
+case "$TARGET" in
+*[0-9]) ROOT_PART=${TARGET}p2 ;;
+*) ROOT_PART=${TARGET}2 ;;
+esac
+mkdir -p /target
+
+# ---- a drive that already has NoticeTV: change its settings, or install again
+MODE=install
+CURRENT_SSID=""
+CURRENT_URL=""
+if [ -b "$ROOT_PART" ] && mount -t ext4 -o ro "$ROOT_PART" /target 2>/dev/null; then
+    if [ -f /target/etc/noticetv/noticetv.conf ]; then
+        MODE=choose
+        CURRENT_SSID=$(sed -n "s/^aWIFI_SSID\[0\]='\(.*\)'$/\1/p" /target/var/lib/dietpi/dietpi-wifi.db 2>/dev/null)
+        CURRENT_URL=$(sed -n 's/^SOFTWARE_CHROMIUM_AUTOSTART_URL=//p' /target/boot/dietpi.txt)
+        case "$CURRENT_URL" in file://*) CURRENT_URL="" ;; esac
+    fi
+    umount /target
+fi
+if [ "$MODE" = choose ]; then
+    MODE=install
+    if [ -z "$TEST" ]; then
+        while :; do
+            screen
+            say "NoticeTV is already on $LABEL."
+            echo
+            say "  1  Change its Wi-Fi and dashboard"
+            say "  2  Install NoticeTV again, erasing everything on the drive"
+            echo
+            printf '  Type 1 or 2 and press Enter: '
+            read -r answer
+            case "$answer" in
+            1) MODE=settings; break ;;
+            2) break ;;
+            esac
+        done
+    fi
+fi
+
+if [ "$MODE" = install ] && [ -z "$TEST" ]; then
     screen
     say "NoticeTV will be installed on:"
     echo
@@ -108,37 +148,180 @@ if [ -z "$TEST" ]; then
     read -r _
 fi
 
-# ---- write, check, and make it the computer's first boot choice
-screen
-say "Installing NoticeTV on $LABEL"
-echo
-# Old partition tables at either end of the drive must not outlive the install.
-wipefs -a "$TARGET" >/dev/null 2>&1
-/usr/lib/noticetv/xz -dc -T0 -v "$IMAGE" | dd of="$TARGET" bs=4194304 2>/dev/null \
-    || stop_with "Writing to the drive failed." "Check the drive, then start the computer from this USB stick again."
-sync
-echo
-say "Checking the installation..."
-echo 3 > /proc/sys/vm/drop_caches
-WRITTEN=$(head -c "$NEED" "$TARGET" | sha256sum | cut -d ' ' -f 1)
-if [ "$WRITTEN" != "$(cat "$FILES/image-sha256")" ]; then
-    stop_with "The drive doesn't hold what was written to it." \
-        "Start the computer from this USB stick to try again. If it fails again, the drive may be faulty."
+# ---- the settings: asked before the install, so nobody waits on a question after it
+SSID=$CURRENT_SSID
+PASSWORD=""
+NEW_PASSWORD=""
+URL=$CURRENT_URL
+if [ -n "$TEST" ]; then
+    SSID=$(sed -n 's/.*noticetv\.test\.ssid=\([^ ]*\).*/\1/p' /proc/cmdline)
+    PASSWORD=$(sed -n 's/.*noticetv\.test\.password=\([^ ]*\).*/\1/p' /proc/cmdline)
+    NEW_PASSWORD=yes
+    URL=$(sed -n 's/.*noticetv\.test\.dashboard=\([^ ]*\).*/\1/p' /proc/cmdline)
+else
+    screen
+    say "Wi-Fi network name"
+    if [ -n "$CURRENT_SSID" ]; then
+        say "To keep $CURRENT_SSID, press Enter."
+    else
+        say "To use a network cable instead, press Enter."
+    fi
+    echo
+    printf '  > '
+    IFS= read -r answer
+    [ -n "$answer" ] && SSID=$answer
+    if [ -n "$SSID" ] && { [ "$SSID" != "$CURRENT_SSID" ] || [ -z "$CURRENT_SSID" ]; }; then
+        while :; do
+            screen
+            say "Password for $SSID"
+            say "For a network without a password, press Enter."
+            echo
+            printf '  > '
+            IFS= read -r PASSWORD
+            len=${#PASSWORD}
+            if [ "$len" -eq 0 ] || { [ "$len" -ge 8 ] && [ "$len" -le 63 ]; }; then
+                break
+            fi
+            echo
+            say "A Wi-Fi password has 8 to 63 characters. Type it again."
+            sleep 3
+        done
+        NEW_PASSWORD=yes
+    fi
+    while :; do
+        screen
+        say "Dashboard address"
+        say "The page this screen shows, for example https://example.com/wall"
+        if [ -n "$CURRENT_URL" ]; then
+            say "To keep $CURRENT_URL, press Enter."
+        else
+            say "To show the NoticeTV start page for now, press Enter."
+        fi
+        echo
+        printf '  > '
+        read -r answer
+        case "$answer" in
+        '') break ;;
+        *[[:space:]\'\"\\]*) echo; say "Type the address without spaces or quotes."; sleep 3 ;;
+        http://* | https://*) URL=$answer; break ;;
+        *) echo; say "Start the address with https:// or http://"; sleep 3 ;;
+        esac
+    done
 fi
 
-# A boot entry for NoticeTV, first in the boot order, so a USB stick left in doesn't start the
-# installer again. Firmware that refuses NVRAM writes still finds NoticeTV on its own.
-if [ -d /sys/firmware/efi ]; then
-    mountpoint -q /sys/firmware/efi/efivars || mount -t efivarfs efivarfs /sys/firmware/efi/efivars
-    for entry in $(efibootmgr 2>/dev/null | sed -n 's/^Boot\([0-9A-Fa-f]\{4\}\)\*\{0,1\} NoticeTV.*/\1/p'); do
-        efibootmgr -q -b "$entry" -B
+# ---- write, check, and make it the computer's first boot choice
+if [ "$MODE" = install ]; then
+    screen
+    say "Installing NoticeTV on $LABEL"
+    echo
+    # Old partition tables at either end of the drive must not outlive the install.
+    wipefs -a "$TARGET" >/dev/null 2>&1
+    /usr/lib/noticetv/xz -dc -T0 -v "$IMAGE" | dd of="$TARGET" bs=4194304 2>/dev/null \
+        || stop_with "Writing to the drive failed." "Check the drive, then start the computer from this USB stick again."
+    sync
+    echo
+    say "Checking the installation..."
+    echo 3 > /proc/sys/vm/drop_caches
+    WRITTEN=$(head -c "$NEED" "$TARGET" | sha256sum | cut -d ' ' -f 1)
+    if [ "$WRITTEN" != "$(cat "$FILES/image-sha256")" ]; then
+        stop_with "The drive doesn't hold what was written to it." \
+            "Start the computer from this USB stick to try again. If it fails again, the drive may be faulty."
+    fi
+
+    # A boot entry for NoticeTV, first in the boot order, so a USB stick left in doesn't start the
+    # installer again. Firmware that refuses NVRAM writes still finds NoticeTV on its own.
+    if [ -d /sys/firmware/efi ]; then
+        grep -q " /sys/firmware/efi/efivars " /proc/mounts || mount -t efivarfs efivarfs /sys/firmware/efi/efivars
+        for entry in $(efibootmgr 2>/dev/null | sed -n 's/^Boot\([0-9A-Fa-f]\{4\}\)\*\{0,1\} NoticeTV.*/\1/p'); do
+            efibootmgr -q -b "$entry" -B
+        done
+        efibootmgr -q -c -d "$TARGET" -p 1 -L NoticeTV -l '\EFI\debian\shimx64.efi' 2>/dev/null || true
+    fi
+
+    # The new partition table, so the installed root filesystem can be opened for the settings.
+    blockdev --rereadpt "$TARGET"
+    n=0
+    until [ -b "$ROOT_PART" ] || [ $n -ge 10 ]; do
+        sleep 1
+        n=$((n + 1))
     done
-    efibootmgr -q -c -d "$TARGET" -p 1 -L NoticeTV -l '\EFI\debian\shimx64.efi' 2>/dev/null || true
 fi
+
+# ---- the settings, into the installed system
+write_settings() {
+    mount -t ext4 "$ROOT_PART" /target || return 1
+    if [ -n "$NEW_PASSWORD" ] && [ -n "$SSID" ]; then
+        # What DietPi's own Wi-Fi tool (dietpi-wifidb) keeps and generates: its database, holding
+        # the key as wpa_passphrase's 64-digit hash rather than the password, and the
+        # wpa_supplicant.conf the Wi-Fi interface reads.
+        quoted_ssid=$(printf '%s' "$SSID" | sed "s/'/'\\\\''/g")
+        if [ -n "$PASSWORD" ]; then
+            key=$(/usr/lib/noticetv/wpa_passphrase "$SSID" "$PASSWORD" | sed -n 's/^[[:space:]]*psk=//p' | tail -n 1)
+            keymgr=WPA-PSK
+        else
+            key=""
+            keymgr=NONE
+        fi
+        {
+            i=0
+            while [ $i -lt 5 ]; do
+                if [ $i -eq 0 ]; then
+                    echo "aWIFI_SSID[0]='$quoted_ssid'"
+                    echo "aWIFI_KEY[0]='$key'"
+                    echo "aWIFI_KEYMGR[0]='$keymgr'"
+                else
+                    echo "aWIFI_SSID[$i]=''"
+                    echo "aWIFI_KEY[$i]=''"
+                    echo "aWIFI_KEYMGR[$i]='WPA-PSK'"
+                fi
+                for field in PROTO PAIRWISE AUTH_ALG EAP IDENTITY PASSWORD PHASE1 PHASE2 CERT; do
+                    echo "aWIFI_${field}[$i]=''"
+                done
+                i=$((i + 1))
+            done
+        } > /target/var/lib/dietpi/dietpi-wifi.db
+        country=$(sed -n 's/^AUTO_SETUP_NET_WIFI_COUNTRY_CODE=//p' /target/boot/dietpi.txt)
+        # The name as hex: any character, quotes included, survives.
+        hex_ssid=$(printf '%s' "$SSID" | od -A n -t x1 | tr -d ' \n')
+        {
+            echo "country=${country:-GB}"
+            echo "ctrl_interface=DIR=/run/wpa_supplicant GROUP=netdev"
+            echo "update_config=1"
+            echo "network={"
+            echo "	ssid=$hex_ssid"
+            echo "	scan_ssid=1"
+            echo "	key_mgmt=$keymgr"
+            [ -n "$key" ] && echo "	psk=$key"
+            echo "}"
+        } > /target/etc/wpa_supplicant/wpa_supplicant.conf
+        chmod 600 /target/etc/wpa_supplicant/wpa_supplicant.conf /target/var/lib/dietpi/dietpi-wifi.db
+    fi
+    if [ -n "$URL" ]; then
+        escaped=$(printf '%s' "$URL" | sed 's/[&|]/\\&/g')
+        sed -i "s|^SOFTWARE_CHROMIUM_AUTOSTART_URL=.*|SOFTWARE_CHROMIUM_AUTOSTART_URL=$escaped|" /target/boot/dietpi.txt
+        conf=/target/etc/noticetv/noticetv.conf
+        if grep -q '^DASHBOARD_URL=' "$conf"; then
+            sed -i "s|^DASHBOARD_URL=.*|DASHBOARD_URL='$escaped'|" "$conf"
+        else
+            echo "DASHBOARD_URL='$URL'" >> "$conf"
+        fi
+    fi
+    sync
+    umount /target
+}
+write_settings || stop_with "The settings could not be saved on the drive." \
+    "Start the computer from this USB stick again, and choose to change the Wi-Fi and dashboard."
 umount /installer
 
 screen
-say "NoticeTV is installed."
+if [ "$MODE" = install ]; then
+    say "NoticeTV is installed."
+else
+    say "The settings are saved."
+fi
+echo
+say "Wi-Fi:      ${SSID:-network cable}"
+say "Dashboard:  ${URL:-the NoticeTV start page}"
 echo
 if [ -n "$TEST" ]; then
     poweroff -f
