@@ -4,7 +4,8 @@ After=network.target
 
 [Service]
 ExecStart=/usr/local/lib/noticetv/wifi-watch.sh
-Restart=always
+# on-failure: the script exits cleanly on a box without Wi-Fi, and must stay stopped there.
+Restart=on-failure
 RestartSec=30
 SyslogIdentifier=noticetv-wifi-watch
 
