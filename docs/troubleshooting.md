@@ -43,6 +43,15 @@ DISPLAY=:0 XAUTHORITY=/root/.Xauthority scrot -o /tmp/screen.png
 
 Then from your computer: `ssh root@<the box> cat /tmp/screen.png > screen.png`.
 
+## The screen shows text instead of the dashboard
+
+That is the console Chromium leaves behind when it quits or crashes. `noticetv-kiosk-watch` notices
+within about a minute and restarts the kiosk; its log says when it did:
+
+```sh
+journalctl -t noticetv-kiosk-watch
+```
+
 ## The kiosk is stuck or shows an old page
 
 Restart the kiosk session (X and Chromium), the same thing the nightly 04:00 restart does:

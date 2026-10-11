@@ -220,7 +220,8 @@ systemctl enable --quiet noticetv-wifi-watch.service
 if ! systemctl is-active --quiet dietpi-wifi-monitor.service; then
     systemctl restart noticetv-wifi-watch.service  # picks up a changed script
 fi
-systemctl enable --quiet noticetv-power.service noticetv-hidecursor.service
+systemctl enable --quiet noticetv-power.service noticetv-hidecursor.service noticetv-kiosk-watch.service
+systemctl restart noticetv-kiosk-watch.service  # picks up a changed script
 systemctl enable --now --quiet noticetv-health.timer noticetv-kiosk-restart.timer noticetv-splash-timeout.timer
 if [ "$STATUSBAR" = yes ]; then
     systemctl enable --quiet noticetv-statusbar.service

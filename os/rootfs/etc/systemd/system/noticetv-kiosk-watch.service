@@ -1,0 +1,10 @@
+[Unit]
+Description=NoticeTV: restart the kiosk if Chromium has quit
+
+[Service]
+ExecStart=/usr/local/lib/noticetv/kiosk-watch.sh
+Restart=on-failure
+SyslogIdentifier=noticetv-kiosk-watch
+
+[Install]
+WantedBy=multi-user.target
