@@ -12,6 +12,8 @@ AUTO_SETUP_TIMEZONE=UTC
 
 AUTO_SETUP_NET_ETHERNET_ENABLED=1
 AUTO_SETUP_NET_WIFI_ENABLED=1
+# Which Wi-Fi channels the box may use. DietPi's default is GB.
+AUTO_SETUP_NET_WIFI_COUNTRY_CODE=US
 # A box boots before anyone has given it a network; it must not wait for one.
 AUTO_SETUP_BOOT_WAIT_FOR_NETWORK=0
 
