@@ -1,0 +1,10 @@
+[Unit]
+Description=NoticeTV: log one line of box health (temperature, power, network) to the journal
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/noticetv/health-log.sh
+SyslogIdentifier=noticetv-health
+# Output at notice; LogLevelMax drops PID 1's per-run "Starting/Finished" info lines.
+SyslogLevel=notice
+LogLevelMax=notice

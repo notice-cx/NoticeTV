@@ -26,14 +26,18 @@ set_dietpi_txt() {
 # Files from installs that predate this layer, replaced by the noticetv-* ones below.
 remove_earlier_layout() {
     for unit in kiosk-statusbar.service kiosk-statusbar-raise.timer kiosk-statusbar-raise.service \
-        kiosk-hidecursor.service kiosk-restart.timer kiosk-restart.service thermal-caps.service; do
+        kiosk-hidecursor.service kiosk-restart.timer kiosk-restart.service thermal-caps.service \
+        health-log.timer health-log.service; do
         if [ -f "/etc/systemd/system/$unit" ]; then
             systemctl disable --now --quiet "$unit" 2>/dev/null || true
             rm -f "/etc/systemd/system/$unit"
         fi
     done
-    rm -f /usr/local/bin/kst-clock.sh /usr/local/bin/rapl-watts.sh /usr/local/bin/thermal-caps.sh \
-        /etc/conky-kiosk.conf /etc/chromium.d/kiosk-tweaks /etc/X11/xorg.conf.d/10-kiosk-noblank.conf
+    rm -f /usr/local/bin/health-log.sh /usr/local/bin/kst-clock.sh /usr/local/bin/rapl-watts.sh \
+        /usr/local/bin/thermal-caps.sh /etc/conky-kiosk.conf /etc/chromium.d/kiosk-tweaks \
+        /etc/X11/xorg.conf.d/10-kiosk-noblank.conf /etc/apt/apt.conf.d/52kiosk-autoreboot \
+        /etc/modprobe.d/rtw88.conf /etc/sysctl.d/98-kiosk-autoreboot.conf \
+        /etc/systemd/system.conf.d/watchdog.conf /etc/systemd/journald.conf.d/persistent.conf
 }
 
 # The status bar's conky config. Laid out for a 3840px panel and scaled to DISPLAY_WIDTH;
@@ -110,10 +114,10 @@ remove_earlier_layout
 . /usr/local/lib/noticetv/lib.sh
 
 step "Packages"
-PACKAGES="conky-std unclutter-xfixes xdotool scrot x11-xserver-utils iw curl
-    fonts-noto-core fonts-noto-color-emoji fonts-noto-cjk"
+PACKAGES="conky-std unclutter-xfixes xdotool scrot x11-xserver-utils chrony unattended-upgrades
+    smartmontools logrotate iw curl fonts-noto-core fonts-noto-color-emoji fonts-noto-cjk"
 if is_intel; then
-    PACKAGES="$PACKAGES thermald firmware-intel-graphics intel-media-va-driver-non-free"
+    PACKAGES="$PACKAGES intel-microcode thermald firmware-intel-graphics intel-media-va-driver-non-free"
 fi
 # shellcheck disable=SC2086  # word splitting of the package list is intended
 DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends $PACKAGES
@@ -123,6 +127,11 @@ fi
 if [ "$(cat /boot/dietpi/.dietpi-autostart_index 2>/dev/null)" != 11 ]; then
     /boot/dietpi/dietpi-autostart 11  # log in automatically and start the Chromium kiosk
     needs_reboot "the kiosk starts on boot"
+fi
+# DietPi keeps logs in RAM by default; a box that freezes has to leave its evidence on disk.
+if dietpi_installed 103; then
+    /boot/dietpi/dietpi-software uninstall 103
+    needs_reboot "logs move from RAM to disk"
 fi
 
 step "Kiosk"
@@ -153,8 +162,11 @@ systemctl mask --quiet sleep.target suspend.target hibernate.target hybrid-sleep
 # Waits up to 2 minutes for an Ethernet port that a Wi-Fi box never plugs in; ifupdown already
 # brings Wi-Fi up before network.target.
 systemctl disable --quiet systemd-networkd-wait-online.service 2>/dev/null || true
+# DietPi masks the apt timers; unattended security updates need them.
+systemctl unmask --quiet apt-daily.timer apt-daily-upgrade.timer apt-daily.service apt-daily-upgrade.service
+systemctl enable --quiet apt-daily.timer apt-daily-upgrade.timer
 systemctl enable --quiet noticetv-power.service noticetv-hidecursor.service
-systemctl enable --now --quiet noticetv-kiosk-restart.timer
+systemctl enable --now --quiet noticetv-health.timer noticetv-kiosk-restart.timer
 if [ "$STATUSBAR" = yes ]; then
     systemctl enable --quiet noticetv-statusbar.service
     systemctl enable --now --quiet noticetv-statusbar-raise.timer

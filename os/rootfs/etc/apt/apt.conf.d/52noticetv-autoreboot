@@ -1,0 +1,5 @@
+// Security updates install unattended; when one needs a reboot, take it at 04:30,
+// half an hour after the nightly kiosk restart.
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
