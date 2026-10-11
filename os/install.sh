@@ -114,7 +114,7 @@ remove_earlier_layout
 . /usr/local/lib/noticetv/lib.sh
 
 step "Packages"
-PACKAGES="conky-std unclutter-xfixes xdotool scrot x11-xserver-utils chrony unattended-upgrades
+PACKAGES="plymouth conky-std unclutter-xfixes xdotool scrot x11-xserver-utils chrony unattended-upgrades
     smartmontools logrotate iw curl fonts-noto-core fonts-noto-color-emoji fonts-noto-cjk"
 if is_intel; then
     PACKAGES="$PACKAGES intel-microcode thermald firmware-intel-graphics intel-media-va-driver-non-free"
@@ -149,16 +149,35 @@ EOF
 write_statusbar_conf
 
 step "Boot"
-CMDLINE="quiet${VIDEO_MODE:+ video=$VIDEO_MODE} consoleblank=0"
+CMDLINE="quiet splash loglevel=3 vt.global_cursor_default=0${VIDEO_MODE:+ video=$VIDEO_MODE} consoleblank=0"
 if ! grep -qxF "GRUB_CMDLINE_LINUX_DEFAULT=\"$CMDLINE\"" /etc/default/grub; then
     sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"$CMDLINE\"|" /etc/default/grub
     update-grub
     needs_reboot "boot options changed"
 fi
+# The graphics driver in the initramfs, so the splash draws through it at full resolution from
+# the first second instead of being taken over mid-splash when it loads from disk.
+if is_intel && ! grep -qx i915 /etc/initramfs-tools/modules; then
+    echo i915 >> /etc/initramfs-tools/modules
+fi
+if [ "$(plymouth-set-default-theme)" != noticetv ]; then
+    plymouth-set-default-theme noticetv
+fi
+# The initramfs carries the splash theme and the module list: rebuild it when either changed.
+SUM=$(cat /usr/share/plymouth/themes/noticetv/* /etc/initramfs-tools/modules /etc/modprobe.d/noticetv-* | md5sum)
+mkdir -p /var/lib/noticetv
+if [ "$SUM" != "$(cat /var/lib/noticetv/initramfs.sum 2>/dev/null)" ]; then
+    update-initramfs -u
+    echo "$SUM" > /var/lib/noticetv/initramfs.sum
+    needs_reboot "the boot splash or early drivers changed"
+fi
 
 step "Services"
 systemctl daemon-reload
 systemctl mask --quiet sleep.target suspend.target hibernate.target hybrid-sleep.target
+# X ends the splash itself (/root/.xserverrc); plymouth's own quit at multi-user would drop to the
+# text console for several seconds, and getty@tty1 is ordered after plymouth-quit-wait.
+systemctl mask --quiet plymouth-quit.service plymouth-quit-wait.service
 # Waits up to 2 minutes for an Ethernet port that a Wi-Fi box never plugs in; ifupdown already
 # brings Wi-Fi up before network.target.
 systemctl disable --quiet systemd-networkd-wait-online.service 2>/dev/null || true
@@ -166,7 +185,7 @@ systemctl disable --quiet systemd-networkd-wait-online.service 2>/dev/null || tr
 systemctl unmask --quiet apt-daily.timer apt-daily-upgrade.timer apt-daily.service apt-daily-upgrade.service
 systemctl enable --quiet apt-daily.timer apt-daily-upgrade.timer
 systemctl enable --quiet noticetv-power.service noticetv-hidecursor.service
-systemctl enable --now --quiet noticetv-health.timer noticetv-kiosk-restart.timer
+systemctl enable --now --quiet noticetv-health.timer noticetv-kiosk-restart.timer noticetv-splash-timeout.timer
 if [ "$STATUSBAR" = yes ]; then
     systemctl enable --quiet noticetv-statusbar.service
     systemctl enable --now --quiet noticetv-statusbar-raise.timer

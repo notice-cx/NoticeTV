@@ -1,0 +1,26 @@
+# NoticeTV boot splash: the lockup centred on the brand canvas (#0d1019), fading in.
+Window.SetBackgroundTopColor(0.0510, 0.0627, 0.0980);
+Window.SetBackgroundBottomColor(0.0510, 0.0627, 0.0980);
+
+logo.image = Image("noticetv.png");
+# Drawn for a 3840px-wide screen; shrink it on anything smaller (early firmware modes).
+scale = Window.GetWidth() / 3840;
+if (scale < 1) {
+  logo.image = logo.image.Scale(logo.image.GetWidth() * scale, logo.image.GetHeight() * scale);
+}
+
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX(Window.GetX() + Window.GetWidth() / 2 - logo.image.GetWidth() / 2);
+logo.sprite.SetY(Window.GetY() + Window.GetHeight() / 2 - logo.image.GetHeight() / 2);
+logo.sprite.SetOpacity(0);
+
+# Plymouth calls this ~50 times a second: fade the lockup in over the first 0.6s.
+# Assignments inside a function are local unless written through global.
+global.frame = 0;
+fun refresh_callback () {
+  global.frame = global.frame + 1;
+  if (global.frame <= 30) {
+    logo.sprite.SetOpacity(global.frame / 30);
+  }
+}
+Plymouth.SetRefreshFunction(refresh_callback);

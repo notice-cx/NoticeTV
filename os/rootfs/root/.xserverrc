@@ -1,0 +1,10 @@
+#!/bin/sh
+# X takes the screen straight from the NoticeTV boot splash: no black flash, no console text.
+# Plymouth lets go of the display but leaves the logo on it; X starts on the splash's VT (vt1,
+# the autologin console, hence -keeptty) and keeps the logo as its background (-background none)
+# until Chromium paints. Plymouth then quits, leaving the screen to X. Same hand-off as GDM's.
+if plymouth --ping 2>/dev/null; then
+    plymouth deactivate
+    ( until [ -S /tmp/.X11-unix/X0 ]; do sleep 0.5; done; sleep 2; plymouth quit --retain-splash ) &
+fi
+exec /usr/bin/X -nolisten tcp -background none vt1 -keeptty "$@"

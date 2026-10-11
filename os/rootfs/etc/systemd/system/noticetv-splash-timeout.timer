@@ -1,0 +1,8 @@
+[Unit]
+Description=NoticeTV: drop the boot splash 2 min after boot if it is still up
+
+[Timer]
+OnBootSec=2min
+
+[Install]
+WantedBy=timers.target

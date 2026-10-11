@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=NoticeTV
+Description=NoticeTV boot splash: the Notice lockup on the brand canvas
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/noticetv
+ScriptFile=/usr/share/plymouth/themes/noticetv/noticetv.script

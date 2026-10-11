@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- The Notice lockup as NoticeOS draws it (BrandLockup): the mark, then the name in Stack Sans
+     Notch, "Notice" at 600 with tight tracking and the suffix lighter in the muted ink.
+     render-splash.sh fills in @FONT@ (base64 woff2), @SUFFIX@ and @BACKGROUND@. -->
+<html><head><meta charset="utf-8"><style>
+@font-face { font-family: "Stack Sans Notch"; src: url(data:font/woff2;base64,@FONT@) format("woff2"); font-weight: 100 900; }
+html, body { margin: 0; width: 3840px; height: 2160px; background: @BACKGROUND@; }
+body { display: flex; align-items: center; justify-content: center; }
+.lockup { display: inline-flex; align-items: center; gap: 0.45em; color: #f0f3ff; white-space: nowrap; line-height: 1.2; font-size: 200px; }
+/* 1.4 capitals of the surrounding Inter (cap height 0.727em). */
+.mark { flex-shrink: 0; height: calc(1.4 * 0.727em); width: auto; aspect-ratio: 354 / 394; }
+.name { font-family: "Stack Sans Notch"; font-weight: 600; letter-spacing: -0.04em; }
+.suffix { font-weight: 400; color: #a4aec3; }
+</style></head><body>
+<span class="lockup">
+  <svg viewBox="0 0 354 394" class="mark"><path fill-rule="evenodd" fill="currentColor" d="M0 0H354V394H0ZM100 0H237V137ZM117 137H237V257H117ZM117 257V394H254Z"/></svg>
+  <span class="name">Notice<span class="suffix">@SUFFIX@</span></span>
+</span>
+</body></html>

@@ -1,0 +1,6 @@
+[Unit]
+Description=NoticeTV: drop the boot splash if the kiosk never took the screen
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'if plymouth --ping; then plymouth quit; fi'
