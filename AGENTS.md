@@ -23,7 +23,7 @@ works.
 | `scripts/` | tools run from a developer's machine, e.g. `install-over-ssh.sh` |
 | `brand/` | the boot splash source: the lockup page, its font, the renderer |
 | `docs/` | tested hardware and its quirks; troubleshooting; how the image and installer are built |
-| `docs/images/` | the README's images and their sources; `render.sh` makes them from VM screenshots |
+| `docs/images/` | the README's images and their sources; `render.sh` makes them from VM screenshots. `badges/` are shields.io badges saved into the repo: linked live, GitHub's image proxy times out on shields.io and shows them broken |
 
 ## Conventions
 

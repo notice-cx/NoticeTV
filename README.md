@@ -7,11 +7,11 @@
 **A small PC behind any TV that keeps your web dashboard on screen, around the clock.**
 It starts straight into your dashboard, recovers on its own and installs from a USB stick.
 
-[![License: AGPL v3](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
-[![Debian 13](https://img.shields.io/badge/Debian-13-A81D33?logo=debian&logoColor=white)](https://www.debian.org/)
-[![DietPi](https://img.shields.io/badge/DietPi-x86__64-2F3337)](https://dietpi.com/)
-[![Chromium](https://img.shields.io/badge/Chromium-kiosk-4285F4?logo=googlechrome&logoColor=white)](https://www.chromium.org/)
-[![Secure Boot](https://img.shields.io/badge/Secure%20Boot-on-2EA44F)](docs/building.md#the-installer)
+[![License: AGPL v3](docs/images/badges/license.svg)](LICENSE)
+[![Debian 13](docs/images/badges/debian.svg)](https://www.debian.org/)
+[![DietPi](docs/images/badges/dietpi.svg)](https://dietpi.com/)
+[![Chromium](docs/images/badges/chromium.svg)](https://www.chromium.org/)
+[![Secure Boot](docs/images/badges/secure-boot.svg)](docs/building.md#the-installer)
 
 ![NoticeTV is always on screen, recovers on its own, keeps the evidence and installs from USB.](docs/images/noticetv-overview.svg)
 
