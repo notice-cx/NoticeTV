@@ -12,6 +12,7 @@ esac
 . /usr/share/initramfs-tools/hook-functions
 
 copy_exec /usr/sbin/blkid /sbin        # finds the USB stick by its label (busybox's can't)
-copy_exec /usr/bin/xz /bin             # multi-threaded decompression, with progress
+# Multi-threaded decompression, with progress. Its own path: busybox's xz applet takes /bin/xz.
+copy_exec /usr/bin/xz /usr/lib/noticetv/xz
 copy_exec /usr/sbin/wipefs /sbin       # clears old partition tables at both ends of the drive
 copy_exec /usr/bin/efibootmgr /bin     # puts NoticeTV first in the boot order
