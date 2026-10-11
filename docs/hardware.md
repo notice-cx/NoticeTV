@@ -40,6 +40,11 @@ state can stall the PCIe bus, and the processor with it. Reported upstream in Ma
 conflict)"](https://lkml.iu.edu/hypermail/linux/kernel/2603.1/02883.html), where turning ASPM off
 alone was enough.
 
+**Made worse by reconnects**: on a weak link (about -70 dBm), DietPi's Wi-Fi monitor rebuilt the
+connection 14 times in one hour, each time on a single lost ping and each time cycling the card
+through its power states. NoticeTV replaces it with `noticetv-wifi-watch`, which reconnects only
+after about 90 seconds without an answer from the router.
+
 **Fix**: `os/rootfs/etc/modprobe.d/noticetv-rtw88.conf` sets `disable_aspm=y` and
 `disable_lps_deep=y`; the watchdog reboots the box if it freezes anyway. The lasting fix is a
 better-supported card: an Intel AX210 fits the same M.2 slot.

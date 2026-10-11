@@ -1,0 +1,12 @@
+[Unit]
+Description=NoticeTV: reconnect Wi-Fi after a real outage, not a single lost ping
+After=network.target
+
+[Service]
+ExecStart=/usr/local/lib/noticetv/wifi-watch.sh
+Restart=always
+RestartSec=30
+SyslogIdentifier=noticetv-wifi-watch
+
+[Install]
+WantedBy=multi-user.target

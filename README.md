@@ -13,7 +13,8 @@ clock.
 - **Boots straight to your dashboard.** Chromium in kiosk mode, scaled for the TV, behind the
   NoticeTV boot screen, with no console text on the way.
 - **Recovers on its own.** A hardware watchdog reboots the box if it ever locks up, the kernel
-  reboots itself after a crash, and the kiosk restarts every night at 04:00.
+  reboots itself after a crash, Wi-Fi reconnects after a real outage (and only then), and the
+  kiosk restarts every night at 04:00.
 - **Leaves evidence.** Logs stay on disk, with one line of health every minute (temperature,
   power, network), so a freeze can be diagnosed after the fact.
 - **Stays patched.** Debian security updates install unattended and reboot at 04:30 when one

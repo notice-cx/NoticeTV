@@ -24,6 +24,17 @@ journalctl -b -1 -t noticetv-health | tail   # its last minutes
 A boot that ends mid-sentence, with no shutdown messages, ended in a freeze or a power cut. With
 the watchdog armed (`wdctl` shows the timeout), a freeze reboots the box within about a minute.
 
+## Is the Wi-Fi dropping?
+
+`noticetv-wifi-watch` pings the router every 30 seconds and reconnects only after about 90
+seconds without an answer. It logs every reconnect, and every shorter gap it rode out:
+
+```sh
+journalctl -t noticetv-wifi-watch
+```
+
+Many short gaps point at a weak signal: move the box or the access point, or use Ethernet.
+
 ## What is on the screen right now?
 
 ```sh

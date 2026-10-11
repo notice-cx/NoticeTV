@@ -184,6 +184,11 @@ systemctl disable --quiet systemd-networkd-wait-online.service 2>/dev/null || tr
 # DietPi masks the apt timers; unattended security updates need them.
 systemctl unmask --quiet apt-daily.timer apt-daily-upgrade.timer apt-daily.service apt-daily-upgrade.service
 systemctl enable --quiet apt-daily.timer apt-daily-upgrade.timer
+# DietPi's Wi-Fi monitor tears the connection down on a single lost ping; noticetv-wifi-watch
+# reconnects only after a real outage.
+systemctl disable --now --quiet dietpi-wifi-monitor.service 2>/dev/null || true
+systemctl enable --quiet noticetv-wifi-watch.service
+systemctl restart noticetv-wifi-watch.service  # picks up a changed script
 systemctl enable --quiet noticetv-power.service noticetv-hidecursor.service
 systemctl enable --now --quiet noticetv-health.timer noticetv-kiosk-restart.timer noticetv-splash-timeout.timer
 if [ "$STATUSBAR" = yes ]; then
