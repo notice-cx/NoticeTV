@@ -29,8 +29,7 @@ It starts straight into your dashboard, recovers on its own and installs from a 
 It shows any web page: the NoticeOS Wall, Grafana, Home Assistant or your own. **NoticeTV OS**
 is a layer on [DietPi](https://dietpi.com), a lightweight Debian.
 
-Status: early. NoticeTV OS runs the maintainer's wall display. Choosing the dashboard on the
-box itself, as part of setup, is in development.
+Status: early. NoticeTV OS runs the maintainer's wall display.
 
 ## Install
 
@@ -42,8 +41,9 @@ From the latest [release](https://github.com/notice-cx/NoticeTV/releases):
    [balenaEtcher](https://etcher.balena.io) or Raspberry Pi Imager.
 2. Plug the stick into the mini PC, turn it on and choose the USB stick in its boot menu (often
    F7, F11, F12 or Esc while it starts). Secure Boot can stay on.
-3. Check the drive it names and press Enter. When it is done, remove the stick: the box restarts
-   into NoticeTV.
+3. Check the drive it names and press Enter. Type your Wi-Fi network and its password (or press
+   Enter to use a network cable), then your dashboard's address. When it is done, remove the
+   stick: the box restarts into NoticeTV, showing your dashboard.
 
 The release also has the **NoticeTV OS image** the installer writes,
 `noticetv-os-<version>-x86_64.img.xz`, for writing to a drive directly.
@@ -58,10 +58,16 @@ ssh root@<the box's IP address> reboot
 
 ## Choose what it shows
 
+![The installer asks for the Wi-Fi network and the dashboard's address.](docs/images/noticetv-setup.png)
+
+The installer asks for the Wi-Fi network and the dashboard. To change them later, start the box
+from the installer stick again and choose **Change its Wi-Fi and dashboard**: nothing else on the
+box is touched.
+
 ![Every setting lives in one file on the box, /etc/noticetv/noticetv.conf; apply it with /opt/noticetv/install.sh.](docs/images/noticetv-configure.png)
 
-Set `DASHBOARD_URL` in `/etc/noticetv/noticetv.conf` on the box and run
-`/opt/noticetv/install.sh` there. Every setting, with its default, is in
+On a box you reach over SSH, every setting is in `/etc/noticetv/noticetv.conf`; run
+`/opt/noticetv/install.sh` there to apply it. Each one, with its default, is in
 [os/noticetv.conf.example](os/noticetv.conf.example). `install.sh` is safe to run again at any
 time, for example after pulling a newer version.
 
