@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" role="img" aria-labelledby="title description">
+  <title id="title">Your dashboard, on the wall</title>
+  <desc id="description">Four things NoticeTV does: it boots straight to your dashboard; it recovers on its own from freezes, crashes and Wi-Fi drops; it keeps a health line every minute; it installs from a USB stick with Secure Boot on. This is a product overview diagram, not a screenshot.</desc>
+  <rect width="640" height="400" rx="20" fill="#0D1019"/>
+  <g font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+    <text x="32" y="47" fill="#F0F3FF" font-size="24" font-weight="600">Your dashboard, on the wall</text>
+    <text x="32" y="77" fill="#A4AEC3" font-size="17">A small PC behind the TV keeps it showing</text>
+    <g fill="#151A26" stroke="#30394E" stroke-width="1">
+      <rect x="24" y="104" width="288" height="128" rx="12"/>
+      <rect x="328" y="104" width="288" height="128" rx="12"/>
+      <rect x="24" y="248" width="288" height="128" rx="12"/>
+      <rect x="328" y="248" width="288" height="128" rx="12"/>
+    </g>
+    <!-- Lucide icons (ISC): tv, rotate-ccw, activity, usb -->
+    <g fill="none" stroke="#B0B9FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <g transform="translate(48 124) scale(1.25)">
+        <rect width="20" height="15" x="2" y="7" rx="2" ry="2"/>
+        <polyline points="17 2 12 7 7 2"/>
+      </g>
+      <g transform="translate(352 124) scale(1.25)">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </g>
+      <g transform="translate(48 268) scale(1.25)">
+        <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>
+      </g>
+      <g transform="translate(352 268) scale(1.25)">
+        <circle cx="10" cy="7" r="1"/>
+        <circle cx="4" cy="20" r="1"/>
+        <path d="M4.7 19.3 19 5"/>
+        <path d="m21 3-3 1 2 2Z"/>
+        <path d="M9.26 7.68 5 12l2 5"/>
+        <path d="m10 14 5 2 3.5-3.5"/>
+        <path d="m18 12 1-1 1 1-1 1Z"/>
+      </g>
+    </g>
+    <g fill="#F0F3FF" font-size="23" font-weight="600">
+      <text x="48" y="194">Always on screen</text>
+      <text x="352" y="194">Recovers on its own</text>
+      <text x="48" y="338">Keeps the evidence</text>
+      <text x="352" y="338">Installs from USB</text>
+    </g>
+    <g fill="#A4AEC3" font-size="16">
+      <text x="48" y="218">Straight to your dashboard</text>
+      <text x="352" y="218">Freezes, crashes, Wi-Fi drops</text>
+      <text x="48" y="362">A health line every minute</text>
+      <text x="352" y="362">Secure Boot stays on</text>
+    </g>
+  </g>
+</svg>

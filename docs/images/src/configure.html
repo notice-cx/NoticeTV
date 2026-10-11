@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- Where a box's settings live and how they take effect. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="common.css">
+<style>
+.card { width: 760px; }
+.file { margin-top: 26px; overflow: hidden; }
+.file-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  color: var(--muted);
+}
+.file-head .icon { width: 18px; height: 18px; }
+pre { margin: 0; padding: 16px 18px; font-size: 15px; line-height: 1.75; color: var(--ink); }
+.key { color: var(--accent); }
+.note { color: #6f7a91; }
+.apply { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 14px 16px; font-size: 15px; color: var(--muted); }
+.apply code { color: var(--ink); font-size: 14.5px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <p class="title">Choose what it shows</p>
+  <p class="subtitle">Every setting lives in one file on the box</p>
+  <div class="file tile">
+    <div class="file-head">
+      <!-- Lucide file-text (ISC) -->
+      <span class="icon"><svg viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
+      <span class="mono">/etc/noticetv/noticetv.conf</span>
+    </div>
+<pre class="mono"><span class="key">DASHBOARD_URL</span>=https://example.com/wall   <span class="note"># the page on screen</span>
+<span class="key">DISPLAY_SCALE</span>=2                          <span class="note"># how large it draws</span>
+<span class="key">POWER_PROFILE</span>=fanless                    <span class="note"># for boxes without a fan</span>
+<span class="key">STATUSBAR</span>=yes                            <span class="note"># the bar in the corner</span></pre>
+  </div>
+  <div class="apply tile">
+    <span>Then apply it:</span><code class="mono">/opt/noticetv/install.sh</code>
+  </div>
+</div>
+</body>
+</html>

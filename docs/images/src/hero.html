@@ -1,0 +1,52 @@
+<!doctype html>
+<!-- The README hero: a TV on the studio wall (notice.cx's architectural-studio photo) showing a
+     NoticeTV screenshot. docs/images/render.sh fills in @SCREEN@. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+html, body { margin: 0; }
+.scene {
+  position: relative;
+  width: 1536px;
+  height: 768px;
+  overflow: hidden;
+  background: url(architectural-studio.webp) 0 -200px / 1536px 1024px no-repeat;
+}
+/* A 55-inch-ish TV hung over the sideboard, lit from the window on the left: its shadow falls
+   down and to the right, warm like the wall. */
+.tv {
+  position: absolute;
+  left: 840px;
+  top: 100px;
+  width: 600px;
+  height: 338px;
+  background: #0b0b0c;
+  border-radius: 5px;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.07),
+    16px 24px 38px rgba(74, 48, 22, 0.36),
+    5px 8px 12px rgba(52, 32, 12, 0.30);
+}
+.tv img {
+  position: absolute;
+  inset: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  object-fit: cover;
+  border-radius: 2px;
+}
+/* The window's light across the glass. */
+.tv::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 2px;
+  background: linear-gradient(118deg, rgba(255, 246, 230, 0.11) 0%, rgba(255, 246, 230, 0.04) 34%, rgba(255, 255, 255, 0) 35%);
+}
+</style>
+</head>
+<body>
+<div class="scene"><div class="tv"><img src="@SCREEN@" alt=""></div></div>
+</body>
+</html>

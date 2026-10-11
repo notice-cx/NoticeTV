@@ -71,6 +71,13 @@ docker run --rm -v "$PWD":/src -v noticetv-build:/work -e WORK=/work -e DIST=/sr
 `WORK` caches the DietPi download between builds. `VM_MEMORY` (MiB, default 3072) and `VM_CPUS`
 (default 2) size the build VM.
 
+## Screenshots
+
+`image/screenshots.sh dist/noticetv-os-<version>-x86_64.img.xz [dashboard URL]` boots an image in
+a VM with a 4K screen, running this checkout's NoticeTV scripts, and saves the screen every 15
+seconds to `dist/screenshots/`. `docs/images/render.sh TV_SCREEN INSTALLER_SCREEN` turns one of
+those, and a picture of the installer's confirmation screen, into the README's images.
+
 ## Trying an image
 
 Boot it in QEMU on any machine, with a window showing the TV's view:

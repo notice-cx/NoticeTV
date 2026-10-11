@@ -1,0 +1,30 @@
+/* Shared by the README graphics: the NoticeOS brand tokens (apps/tower/public/brand/notice.css). */
+@font-face { font-family: Inter; src: url("../../../brand/fonts/InterVariable.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Stack Sans Notch"; src: url("../../../brand/fonts/StackSansNotch-Variable.woff2") format("woff2"); font-weight: 100 900; }
+:root {
+  --canvas: #0d1019;
+  --surface: #151a26;
+  --raised: #1e2636;
+  --ink: #f0f3ff;
+  --muted: #a4aec3;
+  --line: #303a4f;
+  --accent: #b0b9ff;
+}
+html, body { margin: 0; background: transparent; }
+body { font-family: Inter, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+.card {
+  background: var(--canvas);
+  border-radius: 20px;
+  padding: 32px;
+  box-sizing: border-box;
+}
+.title { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.subtitle { font-size: 17px; color: var(--muted); margin: 8px 0 0; }
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.icon { width: 30px; height: 30px; color: var(--accent); }
+.icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }

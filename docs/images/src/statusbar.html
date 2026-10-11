@@ -1,0 +1,67 @@
+<!doctype html>
+<!-- The status bar, explained: the bar as install.sh lays it out on a 4K screen, drawn at 60% of
+     its size there, with the box's own icon and lockup images and example values. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="common.css">
+<style>
+.card { display: inline-block; }
+.bar {
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  background: #000;
+  border-radius: 6px;
+  padding: 8.4px;
+  font-family: "Noto Sans", Inter, sans-serif;
+  font-size: 16px;
+  color: #b8c2cc;
+}
+.field { display: flex; align-items: center; gap: 8.4px; white-space: nowrap; height: 24px; }
+.field img { width: 15.6px; height: 15.6px; }
+.field img.lockup { width: 88.2px; height: 16.8px; }
+.ip { color: #e8b04c; }
+.legend { display: flex; margin-top: 14px; padding-left: 8.4px; }
+.legend div {
+  font-size: 12.5px;
+  color: var(--muted);
+  border-left: 1px solid var(--line);
+  padding: 1px 0 0 7px;
+  box-sizing: border-box;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.legend b { display: block; color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="card">
+  <p class="title">The status bar</p>
+  <p class="subtitle">Bottom right of the screen: how the box is doing, at a glance</p>
+  <!-- Column widths: install.sh's at 3840 px, times 0.6. -->
+  <div class="bar">
+    <div class="field" style="width:123px"><img class="lockup" src="../../../os/rootfs/usr/share/noticetv/statusbar-lockup.png" alt=""></div>
+    <div class="field ip" style="width:135px"><img src="../../../os/rootfs/usr/share/noticetv/icons/ip.png" alt="">192.168.1.50</div>
+    <div class="field" style="width:75px"><img src="../../../os/rootfs/usr/share/noticetv/icons/wifi.png" alt="">82%</div>
+    <div class="field" style="width:78px"><img src="../../../os/rootfs/usr/share/noticetv/icons/temp.png" alt="">54°C</div>
+    <div class="field" style="width:75px"><img src="../../../os/rootfs/usr/share/noticetv/icons/watts.png" alt="">4.1W</div>
+    <div class="field" style="width:75px"><img src="../../../os/rootfs/usr/share/noticetv/icons/load.png" alt="">0.32</div>
+    <div class="field" style="width:72px"><img src="../../../os/rootfs/usr/share/noticetv/icons/ram.png" alt="">18%</div>
+    <div class="field" style="width:99px"><img src="../../../os/rootfs/usr/share/noticetv/icons/disk.png" alt="">212GiB</div>
+    <div class="field" style="width:96px"><img src="../../../os/rootfs/usr/share/noticetv/icons/uptime.png" alt="">3d 4h</div>
+  </div>
+  <div class="legend">
+    <div style="width:123px; border-left:none"></div>
+    <div style="width:135px"><b>Address</b>on the network</div>
+    <div style="width:75px"><b>Wi-Fi</b>signal</div>
+    <div style="width:78px"><b>Heat</b>processor</div>
+    <div style="width:75px"><b>Power</b>draw</div>
+    <div style="width:75px"><b>Load</b>1 minute</div>
+    <div style="width:72px"><b>Memory</b>in use</div>
+    <div style="width:99px"><b>Disk</b>free space</div>
+    <div style="width:96px"><b>Uptime</b>since boot</div>
+  </div>
+</div>
+</body>
+</html>
