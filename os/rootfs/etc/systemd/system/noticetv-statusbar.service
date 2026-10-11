@@ -1,0 +1,14 @@
+[Unit]
+Description=NoticeTV: status bar overlay (conky)
+
+[Service]
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/root/.Xauthority
+# Starts once the kiosk is up; Restart covers a kiosk restart taking X away.
+ExecStartPre=/bin/sh -c 'until pgrep -x chromium >/dev/null; do sleep 2; done; sleep 5'
+ExecStart=/usr/bin/conky -c /etc/noticetv/statusbar.conky
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

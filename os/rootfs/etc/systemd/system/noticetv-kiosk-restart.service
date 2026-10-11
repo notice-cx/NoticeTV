@@ -1,0 +1,6 @@
+[Unit]
+Description=NoticeTV: restart the kiosk session (X and Chromium)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart getty@tty1.service

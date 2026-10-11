@@ -1,0 +1,171 @@
+#!/bin/sh
+# NoticeTV OS installer: turns a DietPi (x86_64) install into a NoticeTV.
+# Run as root on the box from a copy of this folder; scripts/install-over-ssh.sh does that from
+# another machine. Safe to run again: every step converges on the same state, and the summary
+# says when a reboot is needed. Settings: /etc/noticetv/noticetv.conf (see noticetv.conf.example).
+set -eu
+
+HERE=$(cd "$(dirname "$0")" && pwd)
+REBOOT_REASONS=""
+needs_reboot() { REBOOT_REASONS="$REBOOT_REASONS
+  - $1"; }
+step() { echo "==> $*"; }
+is_intel() { grep -q GenuineIntel /proc/cpuinfo; }
+dietpi_installed() { grep -q "^aSOFTWARE_INSTALL_STATE\[$1\]=2" /boot/dietpi/.installed; }
+
+# Set KEY=VALUE in /boot/dietpi.txt, escaping the characters sed would treat as special.
+set_dietpi_txt() {
+    value=$(printf '%s' "$2" | sed 's/[&|\\]/\\&/g')
+    if grep -q "^[[:blank:]]*$1=" /boot/dietpi.txt; then
+        sed -i "s|^[[:blank:]]*$1=.*|$1=$value|" /boot/dietpi.txt
+    else
+        echo "$1=$2" >> /boot/dietpi.txt
+    fi
+}
+
+# Files from installs that predate this layer, replaced by the noticetv-* ones below.
+remove_earlier_layout() {
+    for unit in kiosk-statusbar.service kiosk-statusbar-raise.timer kiosk-statusbar-raise.service \
+        kiosk-hidecursor.service kiosk-restart.timer kiosk-restart.service thermal-caps.service; do
+        if [ -f "/etc/systemd/system/$unit" ]; then
+            systemctl disable --now --quiet "$unit" 2>/dev/null || true
+            rm -f "/etc/systemd/system/$unit"
+        fi
+    done
+    rm -f /usr/local/bin/kst-clock.sh /usr/local/bin/rapl-watts.sh /usr/local/bin/thermal-caps.sh \
+        /etc/conky-kiosk.conf /etc/chromium.d/kiosk-tweaks /etc/X11/xorg.conf.d/10-kiosk-noblank.conf
+}
+
+# The status bar's conky config. Laid out for a 3840px panel and scaled to DISPLAY_WIDTH;
+# each field gets a fixed-width column so values changing length never make the bar jitter.
+write_statusbar_conf() {
+    k=$(awk -v w="$DISPLAY_WIDTH" 'BEGIN{printf "%.4f", w/3840}')
+    px() { awk -v n="$1" -v k="$k" 'BEGIN{printf "%d", n*k + 0.5}'; }
+    F=/usr/local/lib/noticetv/statusbar-field.sh
+    text=""
+    x=0
+    add() {  # add WIDTH_AT_4K CONTENT
+        if [ "$x" -gt 0 ]; then
+            text="$text\${goto $(px "$x")}"
+        fi
+        text="$text$2"
+        x=$((x + $1))
+    }
+    add 220 "\${color 9a8cc9}\${execi 5 $F clock}\${color}"
+    add 200 "\${color e8b04c}\${execi 30 $F ip}\${color}"
+    if [ "$STATUSBAR_WAN_IP" = yes ]; then
+        add 205 "\${color 6fb3d2}\${execi 300 $F wan}\${color}"
+    fi
+    if [ -d /sys/class/net/wlan0/wireless ]; then
+        add 165 "wifi \${wireless_link_qual_perc wlan0}%"
+    fi
+    add 105 "\${execi 5 $F temp}"
+    add 105 "\${execi 5 $F watts}"
+    add 160 "load \${loadavg 1}"
+    add 155 "ram \${memperc}%"
+    add 180 "disk \${fs_free /}"
+    add 285 "up \${uptime_short}"
+    cat > /etc/noticetv/statusbar.conky << EOF
+-- Written by NoticeTV install.sh from /etc/noticetv/noticetv.conf; edits here are overwritten.
+conky.config = {
+    own_window = true,
+    own_window_type = 'override',
+    own_window_transparent = false,
+    own_window_colour = '000000',
+    alignment = 'bottom_right',
+    gap_x = $(px 16),
+    gap_y = $(px 16),
+    border_inner_margin = $(px 14),
+    border_outer_margin = 0,
+    minimum_width = $(px "$x"),
+    maximum_width = $(px "$x"),
+    minimum_height = 0,
+    double_buffer = true,
+    update_interval = 5,
+    use_xft = true,
+    font = 'Noto Sans:size=$(px 20)',
+    default_color = 'b8c2cc',
+    pad_percents = 2,
+    background = false,
+    out_to_console = false,
+}
+conky.text = [[$text]]
+EOF
+}
+
+[ "$(id -u)" = 0 ] || { echo "install.sh: run as root" >&2; exit 1; }
+[ -f /boot/dietpi/.version ] || { echo "install.sh: this is not a DietPi system" >&2; exit 1; }
+[ "$(uname -m)" = x86_64 ] || { echo "install.sh: NoticeTV OS supports x86_64 boxes only" >&2; exit 1; }
+
+step "Settings"
+mkdir -p /etc/noticetv
+if [ ! -f /etc/noticetv/noticetv.conf ]; then
+    cp "$HERE/noticetv.conf.example" /etc/noticetv/noticetv.conf
+    echo "    created /etc/noticetv/noticetv.conf with the defaults"
+fi
+
+step "Files"
+remove_earlier_layout
+(cd "$HERE/rootfs" && tar -cf - .) | tar -C / -xf - --no-same-owner --no-overwrite-dir
+. /usr/local/lib/noticetv/lib.sh
+
+step "Packages"
+PACKAGES="conky-std unclutter-xfixes xdotool scrot x11-xserver-utils iw curl
+    fonts-noto-core fonts-noto-color-emoji fonts-noto-cjk"
+if is_intel; then
+    PACKAGES="$PACKAGES thermald firmware-intel-graphics intel-media-va-driver-non-free"
+fi
+# shellcheck disable=SC2086  # word splitting of the package list is intended
+DEBIAN_FRONTEND=noninteractive apt-get install -y -q --no-install-recommends $PACKAGES
+if ! dietpi_installed 113; then
+    /boot/dietpi/dietpi-software install 113  # Chromium, with DietPi's kiosk launcher
+fi
+if [ "$(cat /boot/dietpi/.dietpi-autostart_index 2>/dev/null)" != 11 ]; then
+    /boot/dietpi/dietpi-autostart 11  # log in automatically and start the Chromium kiosk
+    needs_reboot "the kiosk starts on boot"
+fi
+
+step "Kiosk"
+RES_X=$(awk -v w="$DISPLAY_WIDTH" -v s="$DISPLAY_SCALE" 'BEGIN{printf "%d", w/s}')
+RES_Y=$(awk -v h="$DISPLAY_HEIGHT" -v s="$DISPLAY_SCALE" 'BEGIN{printf "%d", h/s}')
+set_dietpi_txt SOFTWARE_CHROMIUM_RES_X "$RES_X"
+set_dietpi_txt SOFTWARE_CHROMIUM_RES_Y "$RES_Y"
+if [ -n "$DASHBOARD_URL" ]; then
+    set_dietpi_txt SOFTWARE_CHROMIUM_AUTOSTART_URL "$DASHBOARD_URL"
+fi
+cat > /etc/chromium.d/noticetv << EOF
+# Written by NoticeTV install.sh from /etc/noticetv/noticetv.conf; edits here are overwritten.
+export CHROMIUM_FLAGS="\$CHROMIUM_FLAGS --noerrdialogs --disable-infobars --disable-session-crashed-bubble --force-device-scale-factor=$DISPLAY_SCALE --enable-features=VaapiVideoDecodeLinuxGL,VaapiVideoDecoder,VaapiIgnoreDriverChecks"
+EOF
+write_statusbar_conf
+
+step "Boot"
+CMDLINE="quiet${VIDEO_MODE:+ video=$VIDEO_MODE} consoleblank=0"
+if ! grep -qxF "GRUB_CMDLINE_LINUX_DEFAULT=\"$CMDLINE\"" /etc/default/grub; then
+    sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"$CMDLINE\"|" /etc/default/grub
+    update-grub
+    needs_reboot "boot options changed"
+fi
+
+step "Services"
+systemctl daemon-reload
+systemctl mask --quiet sleep.target suspend.target hibernate.target hybrid-sleep.target
+# Waits up to 2 minutes for an Ethernet port that a Wi-Fi box never plugs in; ifupdown already
+# brings Wi-Fi up before network.target.
+systemctl disable --quiet systemd-networkd-wait-online.service 2>/dev/null || true
+systemctl enable --quiet noticetv-power.service noticetv-hidecursor.service
+systemctl enable --now --quiet noticetv-kiosk-restart.timer
+if [ "$STATUSBAR" = yes ]; then
+    systemctl enable --quiet noticetv-statusbar.service
+    systemctl enable --now --quiet noticetv-statusbar-raise.timer
+else
+    systemctl disable --now --quiet noticetv-statusbar.service noticetv-statusbar-raise.timer
+fi
+
+echo
+if [ -n "$REBOOT_REASONS" ]; then
+    echo "NoticeTV OS installed. Reboot to finish:$REBOOT_REASONS"
+else
+    echo "NoticeTV OS is up to date. Kiosk changes apply at the next kiosk restart:"
+    echo "  systemctl restart getty@tty1"
+fi

@@ -1,0 +1,12 @@
+[Unit]
+Description=NoticeTV: hide the mouse cursor on the kiosk
+
+[Service]
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/root/.Xauthority
+ExecStart=/usr/bin/unclutter --timeout 1 --jitter 0 --start-hidden
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

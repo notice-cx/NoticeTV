@@ -1,0 +1,31 @@
+# NoticeTV settings: /etc/noticetv/noticetv.conf on the box (shell syntax).
+# install.sh creates it from this file on the first run and never overwrites it.
+# Every line is optional; the value shown is the default. Re-run install.sh after a change.
+
+# The page the screen shows. Empty keeps DietPi's SOFTWARE_CHROMIUM_AUTOSTART_URL in /boot/dietpi.txt.
+#DASHBOARD_URL=
+
+# The panel's resolution and how much to enlarge the page. Chromium's window size is derived
+# from these (width ÷ scale × height ÷ scale), so a mismatch can't clip the dashboard.
+#DISPLAY_WIDTH=3840
+#DISPLAY_HEIGHT=2160
+#DISPLAY_SCALE=2
+
+# Pin the display mode on the kernel command line when a TV's EDID is unreliable,
+# e.g. HDMI-A-1:3840x2160@60. Empty lets the TV decide.
+#VIDEO_MODE=
+
+# stock: the firmware's own power settings. fanless: turbo off and the package power capped at
+# POWER_CAP_LONG_W sustained / POWER_CAP_SHORT_W for bursts, for boxes that cool passively.
+#POWER_PROFILE=stock
+#POWER_CAP_LONG_W=6
+#POWER_CAP_SHORT_W=10
+
+# The status bar in the bottom-right corner: network, temperature, power, load, uptime.
+#STATUSBAR=yes
+# A second clock at the start of the bar, e.g. STATUSBAR_CLOCK_TZ=Europe/London STATUSBAR_CLOCK_LABEL=LDN.
+# Empty shows the local time.
+#STATUSBAR_CLOCK_TZ=
+#STATUSBAR_CLOCK_LABEL=
+# Show the public IP address, looked up from api.ipify.org every 5 minutes.
+#STATUSBAR_WAN_IP=no

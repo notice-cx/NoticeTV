@@ -1,0 +1,8 @@
+[Unit]
+Description=NoticeTV: raise the status bar above Chromium
+
+[Service]
+Type=oneshot
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/root/.Xauthority
+ExecStart=/bin/sh -c '/usr/bin/xdotool search --classname conky windowraise || true'

@@ -1,0 +1,9 @@
+[Unit]
+Description=NoticeTV: apply the power profile from noticetv.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/noticetv/power.sh
+
+[Install]
+WantedBy=multi-user.target

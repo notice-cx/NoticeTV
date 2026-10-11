@@ -1,0 +1,8 @@
+[Unit]
+Description=NoticeTV: restart the kiosk nightly at 04:00, so a slow browser leak never reaches the screen
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+
+[Install]
+WantedBy=timers.target
