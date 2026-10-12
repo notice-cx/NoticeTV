@@ -29,8 +29,9 @@ It is free and open source.
 
 - **Always on screen.** Switch the PC on and your dashboard comes up full screen, after the
   NoticeTV start-up screen. No desktop, no sign-in, nothing to click.
-- **Fixes itself.** If the PC freezes, it restarts. If the browser closes, it reopens. If the
-  Wi-Fi drops, it reconnects.
+- **Fixes itself.** If the PC freezes, it restarts. If the browser closes, it reopens. If your
+  dashboard comes up blank, say because its server was restarting, it reloads it. If the Wi-Fi
+  drops, it reconnects.
 - **Updates itself.** Security updates for Linux and the browser download and install in the
   background, every day. When one needs a restart, the PC restarts at 4:30 in the morning.
 - **Installs from a USB stick.** The installer asks for your Wi-Fi network and your dashboard's
@@ -115,8 +116,9 @@ For the technically curious:
 - **NoticeTV OS** is a layer on [DietPi](https://dietpi.com) (Debian 13, x86_64): Chromium as a
   full-screen kiosk, a Plymouth boot screen in place of console text, and NoticeTV's own services.
 - **Recovery**: a hardware watchdog reboots a frozen PC, the kernel reboots after a crash, the
-  kiosk restarts if Chromium quits (and every night at 04:00), and Wi-Fi reconnects after a real
-  outage of about 90 seconds rather than on a single lost ping.
+  kiosk restarts if Chromium quits (and every night at 04:00), a page left blank for 2 minutes is
+  reloaded (with growing pauses while it stays blank), and Wi-Fi reconnects after a real outage of
+  about 90 seconds rather than on a single lost ping.
 - **Logs** stay on disk, with a health line every minute, so a problem can be diagnosed after
   the fact: [docs/troubleshooting.md](docs/troubleshooting.md).
 - **Updates**: Debian's `unattended-upgrades` installs security updates daily and reboots at
