@@ -67,3 +67,43 @@ wifi_signal() {
     sig=$(iw dev wlan0 link 2>/dev/null | awk '/signal:/{print $2}')
     echo "${sig:-na}"
 }
+
+# Whether the page area of the screen is one flat colour: a page that loaded without drawing
+# anything. Left out: the bottom tenth, where the status bar sits, and a margin of a hundredth on
+# every side, since Chromium's window stops a pixel short of the screen's right edge. Returns 0
+# when blank, 1 when something shows, 2 when the screen could not be read. Needs DISPLAY and
+# XAUTHORITY.
+screen_blank() {
+    local geometry x y w h f bytes pixels header
+    geometry=$(xdotool getdisplaygeometry 2>/dev/null) || return 2
+    x=$((${geometry% *} / 100))
+    y=$((${geometry#* } / 100))
+    w=$((${geometry% *} - 2 * x))
+    h=$((${geometry#* } * 9 / 10 - y))
+    f=/run/noticetv-screen.ppm
+    scrot --overwrite --autoselect "$x,$y,$w,$h" "$f" 2>/dev/null || return 2
+    bytes=$(wc -c < "$f")
+    pixels=$((w * h * 3))
+    header=$((bytes - pixels))
+    if [ "$header" -le 0 ]; then
+        rm -f "$f"
+        return 2
+    fi
+    # The pixels are RGB triplets after the header: the whole area is one colour exactly when every
+    # byte equals the one three bytes on.
+    if cmp -s -i "$header:$((header + 3))" -n "$((pixels - 3))" "$f" "$f"; then
+        rm -f "$f"
+        return 0
+    fi
+    rm -f "$f"
+    return 1
+}
+
+# Reload the page Chromium shows, as its F5 key does. The kiosk has no window manager, so the
+# window is given the keyboard first.
+reload_page() {
+    local win
+    win=$(xdotool search --onlyvisible --class chromium 2>/dev/null | head -n 1)
+    [ -n "$win" ] || return 1
+    xdotool windowfocus "$win" key F5
+}

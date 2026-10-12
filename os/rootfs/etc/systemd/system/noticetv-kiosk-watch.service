@@ -1,5 +1,5 @@
 [Unit]
-Description=NoticeTV: restart the kiosk if Chromium has quit
+Description=NoticeTV: restart the kiosk if Chromium has quit, reload a page left blank
 
 [Service]
 ExecStart=/usr/local/lib/noticetv/kiosk-watch.sh

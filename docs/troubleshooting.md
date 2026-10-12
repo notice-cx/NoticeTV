@@ -52,6 +52,18 @@ within about a minute and restarts the kiosk; its log says when it did:
 journalctl -t noticetv-kiosk-watch
 ```
 
+## The screen is blank: white, or one plain colour
+
+That is usually a dashboard whose app failed to load, for example because its server was restarting
+when the page loaded: the browser counts the page as loaded, so nothing retries it.
+`noticetv-kiosk-watch` reloads a page that has been blank for 2 minutes, then again after 4, 8, 16
+and every 30 minutes while it stays blank. The same log says when it did, and when the page came
+back:
+
+```sh
+journalctl -t noticetv-kiosk-watch
+```
+
 ## The kiosk is stuck or shows an old page
 
 Restart the kiosk session (X and Chromium), the same thing the nightly 04:00 restart does:
