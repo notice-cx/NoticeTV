@@ -5,15 +5,16 @@ code disagree, the code is the fact and this file is amended.
 
 ## What this repo is
 
-NoticeTV is a wall display appliance: an x86 mini PC plugged into a TV that boots straight into
-a web dashboard and runs unattended. NoticeTV OS is the layer that turns a stock DietPi
-(Debian 13, x86_64) install into one. NoticeOS's Wall is one dashboard it can show; any URL
-works.
+NoticeTV includes a self-hosted dashboard and a wall display appliance. The dashboard in `app/`
+has a browser editor, a passive TV view, and a Node.js server. It runs independently of the OS.
+NoticeTV OS turns a stock DietPi (Debian 13, x86_64) mini PC into an unattended display. It can
+show the NoticeTV dashboard, NoticeOS's Wall, or any URL. The OS image does not yet bundle the app.
 
 ## Layout
 
 | Path | Owns |
 |---|---|
+| `app/` | self-hosted dashboard, editor, API, Docker packaging and fixture-only tests; see `app/README.md` |
 | `os/install.sh` | installs the layer: idempotent, run as root on the box |
 | `os/rootfs/` | files installed verbatim onto the box, at the same paths |
 | `os/noticetv.conf.example` | every setting a box can have, with its default |
@@ -27,13 +28,20 @@ works.
 
 ## Conventions
 
+- **Dashboard code is TypeScript.** Browser and server share the versioned document schema in
+  `app/shared/dashboard.ts`. Format with Prettier; run the checks in `CONTRIBUTING.md`.
+- **Published screens and editing have separate access.** A paired display may read the published
+  dashboard but may not read drafts, change configuration, or issue another pairing code.
+- **Dashboard tests use local fixtures.** No live cameras, Home Assistant installations, or external
+  data services. Runtime data and keys stay in the ignored data directory, outside source control.
+
 - **Box scripts are POSIX sh** and run under dash: no bashisms (`local` is fine).
 - **`os/install.sh` converges.** Running it twice changes nothing the second time; a step that
   changes boot (GRUB, initramfs) does so only when its inputs changed, and says a reboot is needed.
 - **Nothing about one installation lives in the repo**: no IP addresses, hostnames, Wi-Fi names,
   dashboard URLs or time zones. Those are settings in `/etc/noticetv/noticetv.conf` on the box.
-  Defaults are defined once, in `os/rootfs/usr/local/lib/noticetv/lib.sh`; the example file
-  documents them.
+  OS defaults are defined once, in `os/rootfs/usr/local/lib/noticetv/lib.sh`; the example file
+  documents them. Dashboard defaults live in `app/shared/dashboard.ts`.
 - **Names**: every unit and config file this layer adds carries the `noticetv-` prefix, so
   `ls /etc/systemd/system/noticetv-*` lists all of it. A file `os/install.sh` generates says so in
   its first line.

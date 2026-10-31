@@ -1,3 +1,11 @@
 .DS_Store
 build/
 dist/
+node_modules/
+app/.data/
+app/.test-data/
+app/playwright-report/
+app/test-results/
+.env
+.env.*
+!.env.example
