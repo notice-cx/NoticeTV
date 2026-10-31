@@ -14,6 +14,7 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:browser": "playwright test",
+    "screenshots": "node scripts/capture-docs.mjs",
     "access-key": "node server/access-key.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

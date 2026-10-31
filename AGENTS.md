@@ -24,7 +24,7 @@ show the NoticeTV dashboard, NoticeOS's Wall, or any URL. The OS image does not 
 | `scripts/` | tools run from a developer's machine, e.g. `install-over-ssh.sh` |
 | `brand/` | the boot splash source: the lockup page, its font, the renderer |
 | `docs/` | tested hardware and its quirks; troubleshooting; how the image and installer are built |
-| `docs/images/` | the README's images and their sources; `render.sh` makes them from VM screenshots. `badges/` are shields.io badges saved into the repo: linked live, GitHub's image proxy times out on shields.io and shows them broken |
+| `docs/images/` | documentation images and provenance; `npm run screenshots` in `app/` captures the dashboard, `render.sh` renders appliance visuals from VM screenshots. Mermaid diagrams live in the root README. `badges/` are saved shields.io badges |
 
 ## Conventions
 

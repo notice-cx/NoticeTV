@@ -2,71 +2,151 @@
 
 **A little more in view.**
 
-NoticeTV is a self-hosted dashboard for the screen in your room. Bring together the weather,
-your plans, a live video stream, and the things worth looking up for. Arrange it in a browser,
-preview the whole screen, and publish when it feels right.
+A self-hosted dashboard for the screen in your room. Bring together the weather, your plans,
+live video, and the things worth looking up for. Configure it from your phone or laptop,
+then publish it to your TV.
 
-![The NoticeTV editor with fictional weather, plans, an illustrated stream preview, a countdown, and a note.](docs/images/noticetv-editor.png)
+[![The NoticeTV display in Graphite, showing weather, an agenda, an illustrated stream, a note, and a countdown.](docs/images/noticetv-dashboard.png)](docs/images/noticetv-dashboard.png)
 
-## The dashboard
+_Screenshots use fictional demo data. The stream tile is an illustration; configured HLS streams play video._
 
-- **A visual editor.** Add widgets, choose their sizes, reorder them, and preview a 16:9 display.
-- **Themes.** Choose Graphite, Midnight, Paper, Ember, or Moss. Graphite is the neutral default;
-  Paper gives the dashboard a light appearance. The editor stays neutral.
-- **Weather.** Search for a location and connect current conditions and a five-day forecast from
-  [Open-Meteo](https://open-meteo.com/).
-- **HLS video.** Connect a browser-accessible `.m3u8` stream. Playback starts muted, fits its
-  widget, and retries after interruptions. Uses native HLS where available and hls.js elsewhere.
-- **An agenda, notes, countdowns, and world clocks.** Enter plans in NoticeTV, keep a thought in
-  view, or see the time somewhere else.
-- **Drafts and publishing.** Save work without changing the TV. Connected displays pick up a
-  publication within ten seconds and retain the running view during a server interruption.
-- **Screen pairing.** A single-use code connects a screen with viewing access. Editing requires
-  the server's editor key.
-- **Portable layouts.** Import and export a versioned JSON document.
+[Try it locally](#try-it-locally) · [Hosting guide](app/README.md) · [Install NoticeTV OS](docs/operating-system.md) · [Contribute](CONTRIBUTING.md)
 
-The `/demo` workspace uses fictional data and an original illustrated scene; it starts without external
-data requests. Real dashboards start with empty connections. The agenda is entered manually;
-external calendar sync and Home Assistant connections are not implemented in this version.
+## Make it your own
 
-## Run locally
+Choose widgets, connect their sources, and arrange the view. Change sizes, reorder widgets,
+and preview the whole screen before publishing. Export a layout to keep it or share it with a friend.
 
-Requires **Node.js 22.12 or newer** and npm. In the `app/` directory:
+[![The browser editor with a live dashboard canvas, widget controls, and the theme picker.](docs/images/noticetv-editor.png)](docs/images/noticetv-editor.png)
 
-```sh
-npm ci
-npm run dev
+| Widget          | What it brings to the screen                                                                                                             |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Weather**     | Current conditions and a five-day forecast from [Open-Meteo](https://open-meteo.com/), with city search and Celsius/Fahrenheit settings. |
+| **Live video**  | HLS `.m3u8` streams, muted autoplay, fit/fill sizing, and recovery after playback interruptions.                                         |
+| **Agenda**      | Plans you enter in NoticeTV, a date rail, and a day-by-day view of the year's progress.                                                  |
+| **Note**        | Plain text for reminders, a message, or a thought for the day.                                                                           |
+| **Countdown**   | The days remaining until something you're looking forward to.                                                                            |
+| **World clock** | Another time zone, using your preferred 12- or 24-hour clock.                                                                            |
+
+[See the widget collection](docs/images/noticetv-widgets.png) · [See the phone editor](docs/images/noticetv-editor-phone.png)
+
+HLS streams must be reachable from the screen and permit browser playback from your dashboard's
+address. Media plays directly in the browser; NoticeTV does not proxy or transcode it.
+
+## Find your theme
+
+Five palettes cover the whole dashboard: text, cards, notes, charts, and display background.
+The editor stays neutral while you choose. Graphite is the default; cursor hiding is a separate
+display setting and is off by default.
+
+| Graphite · neutral charcoal                                                                                          | Paper · light surfaces                                                                                      |
+| -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| [![The Graphite dashboard theme.](docs/images/noticetv-theme-graphite.png)](docs/images/noticetv-theme-graphite.png) | [![The Paper dashboard theme.](docs/images/noticetv-theme-paper.png)](docs/images/noticetv-theme-paper.png) |
+
+Also available: [Midnight](docs/images/noticetv-theme-midnight.png) for deep navy,
+[Ember](docs/images/noticetv-theme-ember.png) for warm charcoal and copper, and
+[Moss](docs/images/noticetv-theme-moss.png) for earthy greens.
+
+## How it fits together
+
+Run one NoticeTV server on your own machine. Open its editor on your phone or laptop and its
+display page on the TV. The server stores the dashboard; each browser loads weather and media
+directly from the configured sources.
+
+```mermaid
+flowchart LR
+    editor("Phone or laptop<br/>Dashboard editor") -->|"Save and publish"| server("NoticeTV server<br/>Saved dashboard")
+    server -->|"Published layout"| screen("Paired TV<br/>Browser or NoticeTV OS")
+    sources("Weather and HLS<br/>Data sources") -->|"Load directly"| screen
+    classDef default fill:#f5f6f8,stroke:#cfd6e2,color:#283346,stroke-width:1px,filter:none;
+    classDef host fill:#e5edf9,stroke:#b8c9e3,color:#233858;
+    class server host;
 ```
 
-Open **http://localhost:3000/demo** to explore the editor. To save a real dashboard, open
-**http://localhost:3000/** and enter the key printed by this command in another terminal:
+The dashboard works in a browser independently of the operating system. **NoticeTV OS** is the
+appliance option: it turns a mini PC into a display that boots straight into your dashboard and
+recovers from browser and network problems.
 
-```sh
-npm run access-key
+## From draft to display
+
+1. **Build the view.** Choose widgets, sources, a layout, and a theme.
+2. **Preview or save a draft.** Keep working without changing the published screen.
+3. **Publish.** Connected screens pick up the new view within ten seconds.
+4. **Connect a screen.** Open your server's `/display` page on the TV and enter the code from
+   **Connect a screen** in the editor. Pairing can happen before or after the first publication.
+
+```mermaid
+flowchart LR
+    edit("Edit dashboard") --> draft("Save draft")
+    edit --> preview("Preview the draft")
+    edit -->|"Publish"| live("Published dashboard")
+    live --> screens("Paired screens update")
+    classDef default fill:#f5f6f8,stroke:#cfd6e2,color:#283346,stroke-width:1px,filter:none;
+    classDef published fill:#e5edf9,stroke:#b8c9e3,color:#233858;
+    class live published;
 ```
 
-The server binds to loopback by default. For Docker, access from another device, HTTPS,
-configuration, and the production build, see **[the dashboard guide](app/README.md)**.
+Editing requires the server's editor key. A pairing code gives a screen viewing access to the
+published dashboard. Codes work once and expire after five minutes. Use the address and code
+shown by your own server.
 
-## The TV appliance
+<img src="docs/images/noticetv-pairing.png" alt="The Connect a screen dialog showing a display address and a six-digit pairing code." width="490" />
 
-**NoticeTV OS** turns an Intel or AMD mini PC into an unattended display. It boots straight into
-a web dashboard, recovers from browser and network problems, and installs Linux security updates.
-It can show a NoticeTV dashboard or any other web page.
+The running display retains its last published layout during a server interruption and retries
+the connection. Starting or reloading a display still requires the server.
 
-The dashboard app is currently installed separately; the OS image does not bundle it. Existing
-OS installations and image releases keep their existing behavior.
+## Try it locally
 
-See **[the OS installation guide](docs/operating-system.md)** for the USB installer, hardware
-requirements, settings, and recovery behavior. Installing the OS erases the selected drive.
+Requires **Node.js 22.12 or newer** and npm. From a checkout of this repository:
+
+```sh
+npm --prefix app ci
+npm --prefix app run dev
+```
+
+Open **http://localhost:3000/demo** to explore the editor and sample widgets. The demo is temporary;
+use **Export layout** to keep a configuration you make there.
+
+To save a real dashboard, open **http://localhost:3000/**. In a second terminal, get the editor key:
+
+```sh
+npm --prefix app run access-key
+```
+
+Enter that key in the editor, connect your sources, and publish.
+
+The default server accepts connections from this computer. Before connecting a TV or phone,
+configure its network address using the [hosting guide](app/README.md#access-from-another-device).
+The guide also covers [Docker](app/README.md#docker), HTTPS, persistent storage, and backups.
+
+## Add the TV appliance
+
+NoticeTV OS runs on an Intel or AMD mini PC connected to a TV. It starts Chromium full screen,
+recovers from browser and network problems, and installs Linux security updates. It can show
+a NoticeTV dashboard or any other web page.
+
+**The app and OS are installed separately.** The OS image does not currently bundle the dashboard
+server. Install the server on a machine of your choice, then point the display at its `/display` page.
+
+See the **[OS installation guide](docs/operating-system.md)** for the USB installer, hardware
+requirements, and appliance settings. Installing the OS erases the selected drive.
+
+## Current scope
+
+This is early software with one dashboard per server and multiple paired screens. Real dashboards
+start with empty source connections. Agenda events are entered manually; Home Assistant
+authentication and external calendar synchronization are not implemented in this version.
 
 ## Contributing
 
-NoticeTV is early software. Contributions should include clear behavior, appropriate local
-verification, and documentation. Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the development
-workflow and **[AGENTS.md](AGENTS.md)** for repository conventions.
+Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the development workflow and **[AGENTS.md](AGENTS.md)**
+for repository conventions. The [dashboard guide](app/README.md) describes the application structure,
+configuration, and checks. Tests use local fixtures rather than real homes, cameras, or live services.
+
+The screenshots are captured from the running app. See **[visual asset sources](docs/images/README.md)**
+for the capture command and diagram sources.
 
 ## License
 
-NoticeTV is free and open source under the **[GNU AGPL v3](LICENSE)**. Bundled fonts and
-dependencies retain their respective licenses; see [third-party notices](app/THIRD_PARTY_NOTICES.md).
+NoticeTV is free and open source under the **[GNU AGPL v3](LICENSE)**. Fonts and dependencies retain
+their respective licenses; see [third-party notices](app/THIRD_PARTY_NOTICES.md).

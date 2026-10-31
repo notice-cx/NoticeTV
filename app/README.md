@@ -193,6 +193,7 @@ To use an installed Google Chrome instead of downloading Playwright Chromium:
 PLAYWRIGHT_CHANNEL=chrome npm run test:browser
 ```
 
-Screenshots and traces are written to ignored `test-results/`. The main README's image comes
-from the demo-rendering test. See [fixture provenance](tests/fixtures/README.md) and
-[third-party notices](THIRD_PARTY_NOTICES.md).
+Test screenshots and traces are written to ignored `test-results/`. Run `npm run screenshots`
+after building the app to refresh the public documentation images from an isolated local server.
+See [visual asset sources](../docs/images/README.md), [fixture provenance](tests/fixtures/README.md),
+and [third-party notices](THIRD_PARTY_NOTICES.md).
