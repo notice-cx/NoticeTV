@@ -1,0 +1,9 @@
+.data/
+.test-data/
+build/
+dist/
+node_modules/
+playwright-report/
+test-results/
+tests/fixtures/
+package-lock.json

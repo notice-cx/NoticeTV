@@ -1,163 +1,152 @@
 # NoticeTV
 
-[![A TV on a sunlit wall above a wooden sideboard, showing the NoticeOS Wall through NoticeTV.](docs/images/noticetv-hero.jpg)](docs/images/noticetv-hero.jpg)
+**A little more in view.**
 
-## Your dashboard. On the wall.
+A self-hosted dashboard for the screen in your room. Bring together the weather, your plans,
+live video, and the things worth looking up for. Configure it from your phone or laptop,
+then publish it to your TV.
 
-**NoticeTV turns a small PC behind your TV into a screen that shows your dashboard, around the
-clock.**
+[![The NoticeTV display in Graphite, showing weather, an agenda, an illustrated stream, a note, and a countdown.](docs/images/noticetv-dashboard.png)](docs/images/noticetv-dashboard.png)
 
-NoticeTV is a complete operating system, built on Linux, that you install on a mini PC in place
-of Windows. Connect the PC to your TV, tell the installer which web page to show (your Home
-Assistant or Grafana dashboard, the NoticeOS Wall or any other page), and from then on the TV
-starts straight into that page every time it is switched on. NoticeTV keeps it there:
-it recovers from problems on its own and installs its security updates in the background.
+_Screenshots use fictional demo data. The stream tile is an illustration; configured HLS streams play video._
 
-It is free and open source.
+[Try it locally](#try-it-locally) · [Hosting guide](app/README.md) · [Install NoticeTV OS](docs/operating-system.md) · [Contribute](CONTRIBUTING.md)
 
-[![License: AGPL v3](docs/images/badges/license.svg)](LICENSE)
-[![Debian 13](docs/images/badges/debian.svg)](https://www.debian.org/)
-[![DietPi](docs/images/badges/dietpi.svg)](https://dietpi.com/)
-[![Chromium](docs/images/badges/chromium.svg)](https://www.chromium.org/)
-[![Secure Boot](docs/images/badges/secure-boot.svg)](docs/building.md#the-installer)
+## Make it your own
 
-![How NoticeTV works: your dashboard, any web page, goes to a mini PC running NoticeTV in place of Windows, which shows it full screen on your TV from the moment it is switched on.](docs/images/noticetv-how.png)
+Choose widgets, connect their sources, and arrange the view. Change sizes, reorder widgets,
+and preview the whole screen before publishing. Export a layout to keep it or share it with a friend.
 
-## Why NoticeTV
+[![The browser editor with a live dashboard canvas, widget controls, and the theme picker.](docs/images/noticetv-editor.png)](docs/images/noticetv-editor.png)
 
-![Why NoticeTV: always on screen, fixes itself, updates itself, installs from USB, free and open source, built on Linux.](docs/images/noticetv-features.png)
+| Widget          | What it brings to the screen                                                                                                             |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Weather**     | Current conditions and a five-day forecast from [Open-Meteo](https://open-meteo.com/), with city search and Celsius/Fahrenheit settings. |
+| **Live video**  | HLS `.m3u8` streams, muted autoplay, fit/fill sizing, and recovery after playback interruptions.                                         |
+| **Agenda**      | Plans you enter in NoticeTV, a date rail, and a day-by-day view of the year's progress.                                                  |
+| **Note**        | Plain text for reminders, a message, or a thought for the day.                                                                           |
+| **Countdown**   | The days remaining until something you're looking forward to.                                                                            |
+| **World clock** | Another time zone, using your preferred 12- or 24-hour clock.                                                                            |
 
-- **Always on screen.** Switch the PC on and your dashboard comes up full screen, after the
-  NoticeTV start-up screen. No desktop, no sign-in, nothing to click.
-- **Fixes itself.** If the PC freezes, it restarts. If the browser closes, it reopens. If your
-  dashboard comes up blank, say because its server was restarting, it reloads it. If the Wi-Fi
-  drops, it reconnects.
-- **Updates itself.** Security updates for Linux and the browser download and install in the
-  background, every day. When one needs a restart, the PC restarts at 4:30 in the morning.
-- **Installs from a USB stick.** The installer asks for your Wi-Fi network and your dashboard's
-  address, and does the rest. Secure Boot can stay on.
-- **Free and open source.** No price, no subscription, no account. Anyone can read, check and
-  improve the code, which is published under the GNU AGPL license.
-- **Built on Linux.** NoticeTV is built on [Debian](https://www.debian.org), one of the oldest
-  and most widely used versions of Linux, through [DietPi](https://dietpi.com), a lightweight
-  edition of it. You never deal with Linux itself: the PC goes straight to your dashboard.
+[See the widget collection](docs/images/noticetv-widgets.png) · [See the phone editor](docs/images/noticetv-editor-phone.png)
 
-## Questions
+HLS streams must be reachable from the screen and permit browser playback from your dashboard's
+address. Media plays directly in the browser; NoticeTV does not proxy or transcode it.
 
-### Is NoticeTV an app?
+## Find your theme
 
-No. NoticeTV is the operating system: it runs the whole PC, the way Windows did before. It opens
-your dashboard full screen in Chromium, the open-source browser that Google Chrome is built on.
+Five palettes cover the whole dashboard: text, cards, notes, charts, and display background.
+The editor stays neutral while you choose. Graphite is the default; cursor hiding is a separate
+display setting and is off by default.
 
-### What happens to Windows?
+| Graphite · neutral charcoal                                                                                          | Paper · light surfaces                                                                                      |
+| -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| [![The Graphite dashboard theme.](docs/images/noticetv-theme-graphite.png)](docs/images/noticetv-theme-graphite.png) | [![The Paper dashboard theme.](docs/images/noticetv-theme-paper.png)](docs/images/noticetv-theme-paper.png) |
 
-Installing NoticeTV erases the PC's drive. Windows, and every file on the drive, are replaced by
-NoticeTV. Copy anything you want to keep before you start.
+Also available: [Midnight](docs/images/noticetv-theme-midnight.png) for deep navy,
+[Ember](docs/images/noticetv-theme-ember.png) for warm charcoal and copper, and
+[Moss](docs/images/noticetv-theme-moss.png) for earthy greens.
 
-### What can it show?
+## How it fits together
 
-Any web page: a Home Assistant or Grafana dashboard, the NoticeOS Wall, a status page or your own
-site. Choose an address that opens without a sign-in screen, since nobody signs in at the TV.
+Run one NoticeTV server on your own machine. Open its editor on your phone or laptop and its
+display page on the TV. The server stores the dashboard; each browser loads weather and media
+directly from the configured sources.
 
-### Do I need NoticeOS?
-
-No. [NoticeOS](https://github.com/notice-cx/NoticeOS) is a separate project that makes the Wall
-dashboard in the picture above. NoticeTV shows it, or any other page.
-
-## What you need
-
-- **A mini PC with an Intel or AMD processor**, the kind sold with Windows, with a drive of 8 GB
-  or more. [docs/hardware.md](docs/hardware.md) lists the PCs NoticeTV has run on.
-- **A TV or monitor** to connect it to.
-- **Wi-Fi or a network cable.**
-- **A USB stick of 2 GB or more and a USB keyboard**, for the installation.
-- **The web address of your dashboard.**
-
-## Install
-
-![Install in three steps: write the installer to a USB stick, start the PC from it and type your Wi-Fi and dashboard, NoticeTV starts.](docs/images/noticetv-install.png)
-
-> [!WARNING]
-> Installing NoticeTV erases the PC's drive, including Windows and all files on it.
-
-1. Download `noticetv-installer-<version>-x86_64.img` from the latest
-   [release](https://github.com/notice-cx/NoticeTV/releases) and write it to the USB stick with
-   [balenaEtcher](https://etcher.balena.io) or Raspberry Pi Imager.
-2. Plug the stick and the keyboard into the PC, switch it on and choose the USB stick in its boot
-   menu (often F7, F11, F12 or Esc while it starts). Check the drive the installer names and press
-   Enter. Type your Wi-Fi network and its password (or press Enter to use a network cable), then
-   your dashboard's address.
-3. When the installer says it is done, remove the stick. The PC restarts into NoticeTV and shows
-   your dashboard.
-
-**So the screen comes back after a power cut**, set the PC to switch itself on when power
-returns: in its firmware settings (the BIOS, often opened with Del or F2 while it starts), set
-*Restore on AC Power Loss*, or similar, to *Power On*.
-
-## Choose what it shows
-
-![The installer asks for the Wi-Fi network and the dashboard's address.](docs/images/noticetv-setup.png)
-
-The installer asks for your Wi-Fi and your dashboard. To change either later, start the PC from
-the installer stick again and choose **Change its Wi-Fi and dashboard**: everything else on the
-PC stays as it is.
-
-## The status bar
-
-![The status bar: the NoticeTV mark, then the box's address, Wi-Fi signal, processor heat, power draw, load, memory in use, free disk space and uptime.](docs/images/noticetv-statusbar.png)
-
-A slim bar along the bottom of the screen shows how the PC is doing: its network address, Wi-Fi
-signal, temperature, power use, load, memory, free disk space and how long it has been running.
-
-## Under the hood
-
-For the technically curious:
-
-- **NoticeTV OS** is a layer on [DietPi](https://dietpi.com) (Debian 13, x86_64): Chromium as a
-  full-screen kiosk, a Plymouth boot screen in place of console text, and NoticeTV's own services.
-- **Recovery**: a hardware watchdog reboots a frozen PC, the kernel reboots after a crash, the
-  kiosk restarts if Chromium quits (and every night at 04:00), a page left blank for 2 minutes is
-  reloaded (with growing pauses while it stays blank), and Wi-Fi reconnects after a real outage of
-  about 90 seconds rather than on a single lost ping.
-- **Logs** stay on disk, with a health line every minute, so a problem can be diagnosed after
-  the fact: [docs/troubleshooting.md](docs/troubleshooting.md).
-- **Updates**: Debian's `unattended-upgrades` installs security updates daily and reboots at
-  04:30 when one needs it.
-- **No SSH server** in the image: an appliance on someone else's network listens for no logins.
-- **Secure Boot**: the installer starts through Debian's signed shim, GRUB and kernel.
-- **Fanless PCs**: a power profile caps the processor's power, so a passively cooled PC holds a
-  steady temperature.
-- **Tested before release**: every release's installer is tested end to end in a virtual machine
-  with Secure Boot on. It installs NoticeTV on a blank drive, starts it, and checks the kiosk, the
-  Wi-Fi and the dashboard. [docs/building.md](docs/building.md) explains how the image and
-  installer are built.
-
-The release also has the **NoticeTV OS image** the installer writes,
-`noticetv-os-<version>-x86_64.img.xz`, for writing to a drive directly.
-
-### On a PC already running DietPi
-
-With SSH enabled, from a computer with this repository:
-
-```sh
-scripts/install-over-ssh.sh root@<the PC's IP address>
-ssh root@<the PC's IP address> reboot
+```mermaid
+flowchart LR
+    editor("Phone or laptop<br/>Dashboard editor") -->|"Save and publish"| server("NoticeTV server<br/>Saved dashboard")
+    server -->|"Published layout"| screen("Paired TV<br/>Browser or NoticeTV OS")
+    sources("Weather and HLS<br/>Data sources") -->|"Load directly"| screen
+    classDef default fill:#f5f6f8,stroke:#cfd6e2,color:#283346,stroke-width:1px,filter:none;
+    classDef host fill:#e5edf9,stroke:#b8c9e3,color:#233858;
+    class server host;
 ```
 
-![Every setting lives in one file on the PC, /etc/noticetv/noticetv.conf; apply it with /opt/noticetv/install.sh.](docs/images/noticetv-configure.png)
+The dashboard works in a browser independently of the operating system. **NoticeTV OS** is the
+appliance option: it turns a mini PC into a display that boots straight into your dashboard and
+recovers from browser and network problems.
 
-Every setting is then in `/etc/noticetv/noticetv.conf`; run `/opt/noticetv/install.sh` there to
-apply it. Each one, with its default, is in [os/noticetv.conf.example](os/noticetv.conf.example).
-`install.sh` is safe to run again at any time, for example after pulling a newer version.
+## From draft to display
 
-## Status
+1. **Build the view.** Choose widgets, sources, a layout, and a theme.
+2. **Preview or save a draft.** Keep working without changing the published screen.
+3. **Publish.** Connected screens pick up the new view within ten seconds.
+4. **Connect a screen.** Open your server's `/display` page on the TV and enter the code from
+   **Connect a screen** in the editor. Pairing can happen before or after the first publication.
 
-NoticeTV is new. It runs the maintainer's own wall display around the clock. Tell us how it runs
-on your PC in [Issues](https://github.com/notice-cx/NoticeTV/issues).
+```mermaid
+flowchart LR
+    edit("Edit dashboard") --> draft("Save draft")
+    edit --> preview("Preview the draft")
+    edit -->|"Publish"| live("Published dashboard")
+    live --> screens("Paired screens update")
+    classDef default fill:#f5f6f8,stroke:#cfd6e2,color:#283346,stroke-width:1px,filter:none;
+    classDef published fill:#e5edf9,stroke:#b8c9e3,color:#233858;
+    class live published;
+```
+
+Editing requires the server's editor key. A pairing code gives a screen viewing access to the
+published dashboard. Codes work once and expire after five minutes. Use the address and code
+shown by your own server.
+
+<img src="docs/images/noticetv-pairing.png" alt="The Connect a screen dialog showing a display address and a six-digit pairing code." width="490" />
+
+The running display retains its last published layout during a server interruption and retries
+the connection. Starting or reloading a display still requires the server.
+
+## Try it locally
+
+Requires **Node.js 22.12 or newer** and npm. From a checkout of this repository:
+
+```sh
+npm --prefix app ci
+npm --prefix app run dev
+```
+
+Open **http://localhost:3000/demo** to explore the editor and sample widgets. The demo is temporary;
+use **Export layout** to keep a configuration you make there.
+
+To save a real dashboard, open **http://localhost:3000/**. In a second terminal, get the editor key:
+
+```sh
+npm --prefix app run access-key
+```
+
+Enter that key in the editor, connect your sources, and publish.
+
+The default server accepts connections from this computer. Before connecting a TV or phone,
+configure its network address using the [hosting guide](app/README.md#access-from-another-device).
+The guide also covers [Docker](app/README.md#docker), HTTPS, persistent storage, and backups.
+
+## Add the TV appliance
+
+NoticeTV OS runs on an Intel or AMD mini PC connected to a TV. It starts Chromium full screen,
+recovers from browser and network problems, and installs Linux security updates. It can show
+a NoticeTV dashboard or any other web page.
+
+**The app and OS are installed separately.** The OS image does not currently bundle the dashboard
+server. Install the server on a machine of your choice, then point the display at its `/display` page.
+
+See the **[OS installation guide](docs/operating-system.md)** for the USB installer, hardware
+requirements, and appliance settings. Installing the OS erases the selected drive.
+
+## Current scope
+
+This is early software with one dashboard per server and multiple paired screens. Real dashboards
+start with empty source connections. Agenda events are entered manually; Home Assistant
+authentication and external calendar synchronization are not implemented in this version.
+
+## Contributing
+
+Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the development workflow and **[AGENTS.md](AGENTS.md)**
+for repository conventions. The [dashboard guide](app/README.md) describes the application structure,
+configuration, and checks. Tests use local fixtures rather than real homes, cameras, or live services.
+
+The screenshots are captured from the running app. See **[visual asset sources](docs/images/README.md)**
+for the capture command and diagram sources.
 
 ## License
 
-NoticeTV is licensed under the [GNU AGPL v3](LICENSE). The Stack Sans Notch and Inter fonts in
-`brand/fonts` are licensed under the SIL Open Font License 1.1, and the
-[Lucide](https://lucide.dev) icons in `brand/icons` under the ISC License. The hero's
-photograph is from [notice.cx](https://www.notice.cx).
+NoticeTV is free and open source under the **[GNU AGPL v3](LICENSE)**. Fonts and dependencies retain
+their respective licenses; see [third-party notices](app/THIRD_PARTY_NOTICES.md).

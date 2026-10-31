@@ -1,0 +1,15 @@
+services:
+  noticetv:
+    build: .
+    init: true
+    restart: unless-stopped
+    ports:
+      - '${NOTICETV_BIND_ADDRESS:-127.0.0.1}:3000:3000'
+    environment:
+      NOTICETV_ORIGIN: '${NOTICETV_ORIGIN:-http://localhost:3000}'
+      NOTICETV_SECURE_COOKIES: '${NOTICETV_SECURE_COOKIES:-0}'
+    volumes:
+      - dashboard-data:/data
+
+volumes:
+  dashboard-data:
