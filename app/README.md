@@ -89,6 +89,10 @@ Keep credentials in environment configuration or the protected data directory.
    **Publish** validates and stores both the draft and the display version.
 3. Choose **Connect a screen**. Open the displayed `/display` address on the TV and enter its code.
 
+The cursor is visible by default. In dashboard settings, turn on **Hide cursor on display** to
+hide it in the display and preview. Publish the setting to apply it to connected screens;
+the editor keeps its cursor visible. Older layouts also default to showing the cursor.
+
 Pairing codes expire after five minutes and work once. A new code invalidates the previous code.
 A display session can read only the published dashboard, never drafts or editing endpoints.
 Editor sessions last twelve hours. Display sessions last thirty days and renew daily while the

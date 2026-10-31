@@ -550,6 +550,27 @@ button svg {
   line-height: 1.8;
   margin: 9px 0 0;
 }
+.cursor-setting {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #becdb0;
+  font-size: 10px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.cursor-setting input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--mint);
+}
+.cursor-setting small {
+  display: block;
+  margin-top: 5px;
+  color: #7f9072;
+  font-size: 9px;
+}
 .import-export {
   display: flex;
   gap: 7px;
@@ -1576,6 +1597,10 @@ button svg {
   flex: none;
 }
 .is-passive {
+  cursor: default;
+}
+.is-passive.hide-cursor,
+.is-passive.hide-cursor * {
   cursor: none;
 }
 .is-passive a {

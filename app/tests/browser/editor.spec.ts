@@ -106,6 +106,10 @@ test('a draft stays off the display until published and a paired screen cannot e
 }) => {
   await login(page);
   const title = `The shared view ${Date.now()}`;
+  const hideCursor = page.getByRole('checkbox', { name: 'Hide cursor on display' });
+  await expect(hideCursor).not.toBeChecked();
+  await hideCursor.check();
+  await expect(page.locator('.dashboard')).not.toHaveCSS('cursor', 'none');
   await page.getByLabel('Dashboard title').fill(title);
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Draft saved');
@@ -126,17 +130,26 @@ test('a draft stays off the display until published and a paired screen cannot e
   await screen.getByLabel('Pairing code', { exact: true }).fill(code);
   await screen.getByRole('button', { name: 'Connect screen', exact: true }).click();
   await expect(screen.locator('.dashboard')).toBeVisible();
+  await expect(screen.locator('.dashboard')).toHaveCSS('cursor', 'default');
   await expect(screen.getByRole('heading', { name: title })).toHaveCount(0);
   await page.getByRole('button', { name: 'Close dialog' }).click();
   await page.getByRole('button', { name: 'Publish', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Published');
   await expect(screen.getByRole('heading', { name: title })).toBeVisible({ timeout: 15_000 });
+  await expect(screen.locator('.dashboard')).toHaveCSS('cursor', 'none');
+  await expect(screen.locator('.widget').first()).toHaveCSS('cursor', 'none');
   const forbidden = await screen.request.post('/api/publish', {
     headers: { Origin: 'http://localhost:3001' },
     data: {},
   });
   expect(forbidden.status()).toBe(403);
   await screen.screenshot({ path: 'test-results/noticetv-paired-display.png' });
+  await page.reload();
+  await expect(hideCursor).toBeChecked();
+  await hideCursor.uncheck();
+  await page.getByRole('button', { name: 'Preview', exact: true }).click();
+  await expect(page.getByRole('dialog').locator('.dashboard')).toHaveCSS('cursor', 'default');
+  await page.getByRole('button', { name: 'Close dialog' }).click();
   await viewerContext.close();
 });
 

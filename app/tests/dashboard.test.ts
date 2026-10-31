@@ -11,6 +11,8 @@ describe('portable dashboard documents', () => {
   it('starts with an empty, usable dashboard without personal settings or invented live readings', () => {
     const board = dashboardSchema.parse(createDashboard());
     expect(board.timeZone).toBe('UTC');
+    expect(board.hideCursor).toBe(false);
+    expect(dashboardSchema.parse({ ...board, hideCursor: undefined }).hideCursor).toBe(false);
     expect(board.widgets.find((widget) => widget.type === 'weather')).toMatchObject({
       latitude: null,
       longitude: null,

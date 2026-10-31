@@ -54,7 +54,9 @@ export function Dashboard({
   const clock = format({ hour: 'numeric', minute: '2-digit', hour12: !dashboard.hour24 });
   const parts = clock.match(/^(.*?)(?:\s*(AM|PM))?$/i);
   return (
-    <div className={`dashboard ${passive ? 'is-passive' : ''} ${onSelect ? 'is-editable' : ''}`}>
+    <div
+      className={`dashboard ${passive ? 'is-passive' : ''} ${passive && dashboard.hideCursor ? 'hide-cursor' : ''} ${onSelect ? 'is-editable' : ''}`}
+    >
       <header className="dashboard-header">
         <div className="dashboard-intro">
           <div className="board-eyebrow">

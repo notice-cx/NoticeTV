@@ -212,6 +212,19 @@ export function BoardInspector({
         </Field>
         <div className="field-divider" />
         <div className="inspector-tip">
+          <label className="cursor-setting">
+            <input
+              type="checkbox"
+              checked={board.hideCursor}
+              onChange={(event) => change({ ...board, hideCursor: event.target.checked })}
+            />
+            <span>
+              Hide cursor on display
+              <small>Applies to the display and its preview.</small>
+            </span>
+          </label>
+        </div>
+        <div className="inspector-tip">
           <span>Made for the room.</span>
           <p>Large type. Quiet details. A dashboard designed to be seen from across the room.</p>
         </div>

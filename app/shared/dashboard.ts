@@ -91,6 +91,7 @@ export const dashboardSchema = z
     timeZone: z.string().max(100).refine(validTimeZone, 'Choose a valid time zone.'),
     units: z.enum(['celsius', 'fahrenheit']),
     hour24: z.boolean(),
+    hideCursor: z.boolean().default(false),
     widgets: z.array(widgetSchema).min(1).max(20),
   })
   .superRefine((board, context) => {
@@ -173,6 +174,7 @@ export function createDashboard(): Dashboard {
     timeZone: 'UTC',
     units: 'celsius',
     hour24: false,
+    hideCursor: false,
     widgets: ['weather', 'agenda', 'video', 'countdown', 'note'].map((type, index) =>
       createWidget(type as WidgetType, `widget-${index + 1}`),
     ),
