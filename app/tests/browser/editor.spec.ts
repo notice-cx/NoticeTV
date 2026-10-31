@@ -5,6 +5,52 @@ import { createDashboard, type Document } from '../../shared/dashboard';
 
 const fixtureKey = 'noticetv-browser-test-fixture-only';
 
+test('themes preview immediately with readable widgets and a neutral editor', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto('/demo');
+  await expect(page.locator('.dashboard')).toHaveAttribute('data-theme', 'graphite');
+  const editorColor = await page
+    .locator('.inspector')
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  for (const [id, name] of [
+    ['graphite', 'Graphite'],
+    ['midnight', 'Midnight'],
+    ['paper', 'Paper'],
+    ['ember', 'Ember'],
+    ['moss', 'Moss'],
+  ]) {
+    await page.getByRole('radio', { name, exact: true }).check();
+    await expect(page.locator('.dashboard')).toHaveAttribute('data-theme', id);
+    await expect(page.locator('.inspector')).toHaveCSS('background-color', editorColor);
+    const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+    expect(
+      result.violations.map(({ id, nodes }) => ({
+        id,
+        targets: nodes.map(({ target }) => target),
+      })),
+    ).toEqual([]);
+    await page.locator('.canvas-frame').screenshot({ path: `test-results/theme-${id}.png` });
+  }
+  await page.getByRole('radio', { name: 'Paper', exact: true }).check();
+  await expect(page.locator('.dashboard')).toHaveCSS('color-scheme', 'light');
+  await expect(page.locator('.dashboard')).toHaveCSS('background-color', 'rgb(241, 242, 244)');
+  await page.getByRole('button', { name: 'Preview', exact: true }).click();
+  await expect(page.getByRole('dialog').locator('.dashboard')).toHaveAttribute(
+    'data-theme',
+    'paper',
+  );
+  await expect(page.getByRole('dialog').locator('.dashboard')).toHaveCSS(
+    'background-color',
+    'rgb(241, 242, 244)',
+  );
+  await page.getByRole('button', { name: 'Close dialog' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await page.screenshot({ path: 'test-results/noticetv-themes-phone.png', fullPage: true });
+});
+
 test('editor and widget collection meet automated accessibility checks', async ({ page }) => {
   await page.goto('/demo');
   await expect(page.getByRole('heading', { name: 'Home, in the here & now.' })).toBeVisible();
@@ -109,6 +155,7 @@ test('a draft stays off the display until published and a paired screen cannot e
   const hideCursor = page.getByRole('checkbox', { name: 'Hide cursor on display' });
   await expect(hideCursor).not.toBeChecked();
   await hideCursor.check();
+  await page.getByRole('radio', { name: 'Paper', exact: true }).check();
   await expect(page.locator('.dashboard')).not.toHaveCSS('cursor', 'none');
   await page.getByLabel('Dashboard title').fill(title);
   await page.getByRole('button', { name: 'Save draft', exact: true }).click();
@@ -131,12 +178,15 @@ test('a draft stays off the display until published and a paired screen cannot e
   await screen.getByRole('button', { name: 'Connect screen', exact: true }).click();
   await expect(screen.locator('.dashboard')).toBeVisible();
   await expect(screen.locator('.dashboard')).toHaveCSS('cursor', 'default');
+  await expect(screen.locator('.dashboard')).toHaveAttribute('data-theme', 'graphite');
   await expect(screen.getByRole('heading', { name: title })).toHaveCount(0);
   await page.getByRole('button', { name: 'Close dialog' }).click();
   await page.getByRole('button', { name: 'Publish', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Published');
   await expect(screen.getByRole('heading', { name: title })).toBeVisible({ timeout: 15_000 });
   await expect(screen.locator('.dashboard')).toHaveCSS('cursor', 'none');
+  await expect(screen.locator('.dashboard')).toHaveAttribute('data-theme', 'paper');
+  await expect(screen.locator('.display-view')).toHaveCSS('background-color', 'rgb(241, 242, 244)');
   await expect(screen.locator('.widget').first()).toHaveCSS('cursor', 'none');
   const forbidden = await screen.request.post('/api/publish', {
     headers: { Origin: 'http://localhost:3001' },
@@ -146,6 +196,7 @@ test('a draft stays off the display until published and a paired screen cannot e
   await screen.screenshot({ path: 'test-results/noticetv-paired-display.png' });
   await page.reload();
   await expect(hideCursor).toBeChecked();
+  await expect(page.getByRole('radio', { name: 'Paper', exact: true })).toBeChecked();
   await hideCursor.uncheck();
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
   await expect(page.getByRole('dialog').locator('.dashboard')).toHaveCSS('cursor', 'default');

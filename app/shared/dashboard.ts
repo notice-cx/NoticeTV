@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { defaultTheme, themeIds } from './themes.js';
 
 const text = (length: number) => z.string().trim().max(length);
 const httpUrl = z
@@ -91,6 +92,7 @@ export const dashboardSchema = z
     timeZone: z.string().max(100).refine(validTimeZone, 'Choose a valid time zone.'),
     units: z.enum(['celsius', 'fahrenheit']),
     hour24: z.boolean(),
+    theme: z.enum(themeIds).default(defaultTheme),
     hideCursor: z.boolean().default(false),
     widgets: z.array(widgetSchema).min(1).max(20),
   })
@@ -174,6 +176,7 @@ export function createDashboard(): Dashboard {
     timeZone: 'UTC',
     units: 'celsius',
     hour24: false,
+    theme: defaultTheme,
     hideCursor: false,
     widgets: ['weather', 'agenda', 'video', 'countdown', 'note'].map((type, index) =>
       createWidget(type as WidgetType, `widget-${index + 1}`),

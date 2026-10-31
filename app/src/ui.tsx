@@ -15,16 +15,16 @@ export function Wordmark() {
 export function CloudDrawing() {
   return (
     <svg viewBox="0 0 80 60" width="76" height="56" fill="none">
-      <circle cx="47" cy="21" r="12" stroke="#e3c48b" strokeWidth="1.4" />
+      <circle cx="47" cy="21" r="12" stroke="var(--weather)" strokeWidth="1.4" />
       <path
         d="M47 2v4M47 36v5M28 21h-5M65 21h5M34 8l-3-3M61 8l3-3"
-        stroke="#e3c48b"
+        stroke="var(--weather)"
         strokeWidth="1.4"
       />
       <path
         d="M21 45a11 11 0 1 1 4-21 16 16 0 0 1 30 8 7 7 0 0 1 0 14Z"
-        fill="#26332b"
-        stroke="#c3d2bf"
+        fill="var(--surface)"
+        stroke="var(--secondary)"
         strokeWidth="1.4"
       />
     </svg>

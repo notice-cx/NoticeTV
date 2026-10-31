@@ -3,6 +3,7 @@ import { LoaderCircle } from 'lucide-react';
 import { dashboardSchema, type Dashboard as DashboardData } from '../shared/dashboard';
 import { api, ApiError, errorMessage as message } from './api';
 import { Wordmark, ScaledBoard } from './ui';
+import { themeStyle } from './theme';
 
 export function Display({ onDisconnect }: { onDisconnect: () => void }) {
   const [board, setBoard] = useState<DashboardData | null>(null);
@@ -62,7 +63,7 @@ export function Display({ onDisconnect }: { onDisconnect: () => void }) {
       </div>
     );
   return (
-    <main className="display-view">
+    <main className="display-view" data-theme={board.theme} style={themeStyle(board.theme)}>
       <ScaledBoard board={board} passive online={online} />
     </main>
   );

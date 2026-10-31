@@ -93,6 +93,25 @@ The cursor is visible by default. In dashboard settings, turn on **Hide cursor o
 hide it in the display and preview. Publish the setting to apply it to connected screens;
 the editor keeps its cursor visible. Older layouts also default to showing the cursor.
 
+### Themes
+
+Choose a theme in dashboard settings. The canvas and display preview update immediately. Save it
+as a draft or publish it to connected screens, just like a layout change. Theme choices are also
+included in layout imports and exports.
+
+| Theme                                                  | Appearance                         |
+| ------------------------------------------------------ | ---------------------------------- |
+| [Graphite](../docs/images/noticetv-theme-graphite.png) | Neutral charcoal; the default.     |
+| [Midnight](../docs/images/noticetv-theme-midnight.png) | Deep navy with blue accents.       |
+| [Paper](../docs/images/noticetv-theme-paper.png)       | Light surfaces with dark text.     |
+| [Ember](../docs/images/noticetv-theme-ember.png)       | Warm charcoal with copper accents. |
+| [Moss](../docs/images/noticetv-theme-moss.png)         | Earthy greens.                     |
+
+Themes apply to widget surfaces, text, notes, charts, and the area surrounding the display.
+Video content retains its original colors. The editor, sign-in page, and dialogs use neutral
+colors independently of the dashboard. Layouts saved before themes existed default to Graphite.
+Palette definitions live in `shared/themes.ts`; dashboard CSS uses their semantic color variables.
+
 Pairing codes expire after five minutes and work once. A new code invalidates the previous code.
 A display session can read only the published dashboard, never drafts or editing endpoints.
 Editor sessions last twelve hours. Display sessions last thirty days and renew daily while the

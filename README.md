@@ -11,6 +11,8 @@ preview the whole screen, and publish when it feels right.
 ## The dashboard
 
 - **A visual editor.** Add widgets, choose their sizes, reorder them, and preview a 16:9 display.
+- **Themes.** Choose Graphite, Midnight, Paper, Ember, or Moss. Graphite is the neutral default;
+  Paper gives the dashboard a light appearance. The editor stays neutral.
 - **Weather.** Search for a location and connect current conditions and a five-day forecast from
   [Open-Meteo](https://open-meteo.com/).
 - **HLS video.** Connect a browser-accessible `.m3u8` stream. Playback starts muted, fits its

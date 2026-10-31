@@ -6,12 +6,15 @@ import {
   dashboardSchema,
   layoutWidgets,
 } from '../shared/dashboard';
+import { themeIds } from '../shared/themes';
 
 describe('portable dashboard documents', () => {
   it('starts with an empty, usable dashboard without personal settings or invented live readings', () => {
     const board = dashboardSchema.parse(createDashboard());
     expect(board.timeZone).toBe('UTC');
     expect(board.hideCursor).toBe(false);
+    expect(board.theme).toBe('graphite');
+    expect(dashboardSchema.parse({ ...board, theme: undefined }).theme).toBe('graphite');
     expect(dashboardSchema.parse({ ...board, hideCursor: undefined }).hideCursor).toBe(false);
     expect(board.widgets.find((widget) => widget.type === 'weather')).toMatchObject({
       latitude: null,
@@ -19,6 +22,16 @@ describe('portable dashboard documents', () => {
     });
     expect(board.widgets.find((widget) => widget.type === 'video')).toMatchObject({ url: '' });
     expect(board.widgets.find((widget) => widget.type === 'agenda')).toMatchObject({ events: [] });
+  });
+
+  it('keeps theme choices portable and rejects unknown themes', () => {
+    for (const theme of themeIds) {
+      const board = { ...createDashboard(), theme };
+      expect(dashboardSchema.parse(JSON.parse(JSON.stringify(board))).theme).toBe(theme);
+    }
+    expect(dashboardSchema.safeParse({ ...createDashboard(), theme: 'unknown' }).success).toBe(
+      false,
+    );
   });
 
   it('rejects executable URLs, embedded credentials, duplicate widgets, and impossible dates', () => {

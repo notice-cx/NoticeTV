@@ -21,6 +21,7 @@ import {
 } from '../shared/dashboard';
 import { useWeather } from './use-weather';
 import { Video } from './Video';
+import { themeStyle } from './theme';
 
 export function useNow(interval = 1000) {
   const [now, setNow] = useState(() => new Date());
@@ -55,6 +56,8 @@ export function Dashboard({
   const parts = clock.match(/^(.*?)(?:\s*(AM|PM))?$/i);
   return (
     <div
+      data-theme={dashboard.theme}
+      style={themeStyle(dashboard.theme)}
       className={`dashboard ${passive ? 'is-passive' : ''} ${passive && dashboard.hideCursor ? 'hide-cursor' : ''} ${onSelect ? 'is-editable' : ''}`}
     >
       <header className="dashboard-header">

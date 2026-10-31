@@ -27,6 +27,8 @@ import {
   type WidgetType,
 } from '../shared/dashboard';
 
+import { ThemePicker } from './ThemePicker';
+
 export const catalog: {
   type: WidgetType;
   title: string;
@@ -49,7 +51,7 @@ export const catalog: {
     description: 'The plans worth looking up for, with a little perspective.',
     source: 'Your events',
     icon: CalendarDays,
-    color: 'mint',
+    color: 'silver',
   },
   {
     type: 'video',
@@ -81,7 +83,7 @@ export const catalog: {
     description: 'Keep another corner of the world a little closer.',
     source: 'Time zones',
     icon: Clock3,
-    color: 'mint',
+    color: 'silver',
   },
 ];
 
@@ -144,6 +146,8 @@ export function BoardInspector({
             onChange={(event) => change({ ...board, subtitle: event.target.value })}
           />
         </Field>
+        <div className="field-divider" />
+        <ThemePicker value={board.theme} onChange={(theme) => change({ ...board, theme })} />
         <div className="field-divider" />
         <Field
           label="Time zone"
