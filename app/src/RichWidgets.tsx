@@ -56,8 +56,14 @@ export function RichWidgetView({
         />
       ) : (
         <>
-          {data.type === 'ha-weather' && (
-            <HomeWeather value={data.data} board={dashboard} now={now} />
+          {data.type === 'ha-weather' && widget.type === 'ha-weather' && (
+            <HomeWeather
+              value={data.data}
+              board={dashboard}
+              now={now}
+              widget={widget}
+              demo={demo}
+            />
           )}
           {data.type === 'ha-agenda' && widget.type === 'ha-agenda' && (
             <ConnectedAgenda

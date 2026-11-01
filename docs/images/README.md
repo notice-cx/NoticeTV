@@ -31,6 +31,12 @@ The script writes seventeen PNGs into this directory. Review them after interfac
 the updated images alongside the relevant documentation. The screenshots contain no data from a
 real installation. `NOTICETV_DOCS_PORT` selects another local port if the default, 3002, is busy.
 
+`noticetv-weather-sensor.png` and `noticetv-second-location.png` are the editor captures from
+`npm run test:browser -- weather-sensor.spec.ts`. That test uses a synthetic loopback HA server
+and intercepts Open-Meteo requests with fictional responses. Copy the reviewed desktop captures
+from `app/test-results/` into this directory after changing the weather selector. The same test
+captures a phone view for review; neither view contains data from a real installation.
+
 ## Diagrams
 
 The two diagrams are Mermaid code blocks in the root `README.md`; GitHub renders them directly.

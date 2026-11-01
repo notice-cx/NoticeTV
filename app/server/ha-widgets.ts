@@ -16,6 +16,7 @@ import {
 } from '../shared/ha-data.js';
 import {
   widgetEntityIds,
+  secondaryWeatherSource,
   type HistorySeries,
   type Reading,
   type RichWidget,
@@ -236,7 +237,10 @@ export class HAWidgets {
       };
       const [current, secondary, configuration] = await Promise.all([
         place(widget.entityId, true),
-        place(widget.secondaryEntityId, false),
+        place(
+          secondaryWeatherSource(widget) === 'home-assistant' ? widget.secondaryEntityId : '',
+          false,
+        ),
         configurationPromise,
       ]);
       const sun = this.ha.state(widget.sunEntityId)?.attributes;

@@ -5,6 +5,12 @@ import type { Widget } from './dashboard.js';
 const selection = z.union([z.literal(''), entityIdSchema]);
 const domain = (name: string) =>
   selection.refine((id) => !id || id.startsWith(`${name}.`), `Choose a ${name} entity.`);
+export const weatherLocationSchema = z.object({
+  location: z.string().trim().min(1).max(120),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+});
+export type WeatherLocation = z.infer<typeof weatherLocationSchema>;
 export const homeWeatherSchema = z.object({
   type: z.literal('ha-weather'),
   entityId: domain('weather'),
@@ -13,7 +19,12 @@ export const homeWeatherSchema = z.object({
   aqiEntityId: selection,
   sunEntityId: domain('sun'),
   secondaryEntityId: domain('weather'),
+  secondarySource: z.enum(['location', 'home-assistant', 'off']).optional(),
+  secondaryLocation: weatherLocationSchema.nullable().default(null),
 });
+export function secondaryWeatherSource(widget: z.infer<typeof homeWeatherSchema>) {
+  return widget.secondarySource || (widget.secondaryEntityId ? 'home-assistant' : 'location');
+}
 export const calendarSourceSchema = z.object({
   entityId: entityIdSchema.refine((id) => id.startsWith('calendar.'), 'Choose a calendar entity.'),
   name: z.string().trim().max(60),
@@ -84,6 +95,9 @@ export const isRichWidget = (widget: Widget): widget is RichWidget =>
 export function widgetEntityIds(widget: Widget): string[] {
   let ids: string[] = [];
   switch (widget.type) {
+    case 'weather':
+      ids = [widget.temperatureEntityId];
+      break;
     case 'entity':
     case 'ha-readiness':
       ids = [widget.entityId];
@@ -95,7 +109,7 @@ export function widgetEntityIds(widget: Widget): string[] {
         widget.humidityEntityId,
         widget.aqiEntityId,
         widget.sunEntityId,
-        widget.secondaryEntityId,
+        secondaryWeatherSource(widget) === 'home-assistant' ? widget.secondaryEntityId : '',
       ];
       break;
     case 'ha-agenda':

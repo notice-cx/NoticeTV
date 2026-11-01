@@ -1373,6 +1373,20 @@ button svg {
 .weather-credit.stale {
   color: var(--warning);
 }
+.weather-temperature-source {
+  color: var(--muted);
+  font-size: 9px;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.weather-temperature-source.stale {
+  color: var(--warning);
+}
+.weather-temperature-source small {
+  display: block;
+  margin-top: 4px;
+  font-size: 8px;
+}
 .empty-weather {
   flex: 1;
   display: flex;
