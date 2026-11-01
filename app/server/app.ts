@@ -11,6 +11,8 @@ import {
   sessionCookie,
 } from './auth.js';
 import { DashboardStore, RevisionConflict } from './store.js';
+import { connectionInputSchema, entityIdSchema } from '../shared/home-assistant.js';
+import { HomeAssistantConnection, HomeAssistantError } from './home-assistant.js';
 
 type Options = {
   store: DashboardStore;
@@ -18,6 +20,7 @@ type Options = {
   origin: string;
   secureCookies?: boolean;
   development?: boolean;
+  homeAssistant: HomeAssistantConnection;
 };
 
 export function createApp({
@@ -26,6 +29,7 @@ export function createApp({
   origin,
   secureCookies = false,
   development = false,
+  homeAssistant,
 }: Options) {
   const app = express();
   const expected = new URL(origin);
@@ -128,6 +132,74 @@ export function createApp({
   });
   app.get('/api/document', authorized(true), (_request, response) => {
     response.json(store.read());
+  });
+
+  app.get('/api/home-assistant', authorized(true), (_request, response) => {
+    response.json(homeAssistant.status());
+  });
+  const connectionLimit = rateLimit({
+    windowMs: 60_000,
+    limit: 10,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'Too many connection attempts. Try again in a minute.' },
+  });
+  app.put(
+    '/api/home-assistant',
+    authorized(true),
+    connectionLimit,
+    async (request, response, next) => {
+      const result = connectionInputSchema.safeParse(request.body);
+      if (!result.success) {
+        response
+          .status(400)
+          .json({ error: result.error.issues.map((issue) => issue.message).join(' ') });
+        return;
+      }
+      try {
+        response.json(await homeAssistant.configure(result.data));
+      } catch (error) {
+        if (error instanceof HomeAssistantError)
+          response.status(422).json({ error: error.message });
+        else next(error);
+      }
+    },
+  );
+  app.delete('/api/home-assistant', authorized(true), async (_request, response, next) => {
+    try {
+      response.json(await homeAssistant.disconnect());
+    } catch (error) {
+      next(error);
+    }
+  });
+  app.get('/api/home-assistant/entities', authorized(true), (_request, response) => {
+    response.json({ entities: homeAssistant.entities() });
+  });
+  app.get('/api/home-assistant/data', authorized(false), (request, response) => {
+    const result = z
+      .string()
+      .max(5200)
+      .transform((value) => (value ? value.split(',') : []))
+      .pipe(z.array(entityIdSchema).max(20))
+      .safeParse(request.query.entities ?? '');
+    if (!result.success) {
+      response.status(400).json({ error: 'Choose up to 20 valid Home Assistant entities.' });
+      return;
+    }
+    if (readSession(request.headers.cookie, editorKey) !== 'editor') {
+      const allowed = new Set(
+        store
+          .read()
+          .published.widgets.flatMap((widget) =>
+            widget.type === 'entity' && widget.entityId ? [widget.entityId] : [],
+          ),
+      );
+      if (result.data.some((id) => !allowed.has(id))) {
+        response.status(403).json({ error: 'This entity is not part of the published dashboard.' });
+        return;
+      }
+    }
+    response.json(homeAssistant.data(result.data));
   });
 
   const save =

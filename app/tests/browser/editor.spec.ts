@@ -2,8 +2,138 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile } from 'node:fs/promises';
 import { createDashboard, type Document } from '../../shared/dashboard';
+import {
+  fixtureAttributeSecret,
+  fixtureToken,
+  startHomeAssistantFixture,
+} from '../fixtures/home-assistant';
 
 const fixtureKey = 'noticetv-browser-test-fixture-only';
+
+test('Home Assistant connects once and supplies live, scoped readings to a published screen', async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(90_000);
+  page.setDefaultTimeout(10_000);
+  const fixture = await startHomeAssistantFixture();
+  const selected = 'sensor.living_room_temperature';
+  const viewer = await browser.newContext();
+  await viewer.route('**/*', (route) =>
+    new URL(route.request().url()).hostname === 'localhost'
+      ? route.continue()
+      : route.abort('blockedbyclient'),
+  );
+  try {
+    await login(page);
+    await page.getByRole('button', { name: 'Data sources', exact: true }).click();
+    await page.getByLabel('Home Assistant address').fill(fixture.url);
+    await page.getByLabel('Access token').fill('incorrect-fixture-token');
+    await page.getByRole('button', { name: 'Connect Home Assistant', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('rejected the token');
+    await page.getByLabel('Access token').fill(fixtureToken);
+    await page.getByRole('button', { name: 'Connect Home Assistant', exact: true }).click();
+    await expect(page.locator('.ha-connection-status')).toContainText('Connected');
+    await expect(page.getByLabel('Access token')).toHaveValue('');
+    const setupAxe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+    expect(
+      setupAxe.violations.map(({ id, nodes }) => ({
+        id,
+        targets: nodes.map(({ target }) => target),
+      })),
+    ).toEqual([]);
+    await page.screenshot({
+      path: 'test-results/noticetv-home-assistant-desktop.png',
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await page.screenshot({
+      path: 'test-results/noticetv-home-assistant-phone.png',
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.getByRole('button', { name: 'Add widget', exact: true }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: /^Home Assistant Live sensors/ })
+      .click();
+    await page.getByLabel('Find an entity', { exact: true }).fill('Living room');
+    await page.getByLabel('Home Assistant entity').selectOption(selected);
+    await page.getByLabel('Widget title').fill('Room temperature');
+    const reading = page.getByRole('region', { name: 'Room temperature', exact: true });
+    await expect(reading.locator('.entity-value')).toContainText('21.5');
+    await expect(page.getByRole('option', { name: /Private fixture value/ })).toHaveCount(0);
+    const pickerAxe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+    expect(
+      pickerAxe.violations.map(({ id, nodes }) => ({
+        id,
+        targets: nodes.map(({ target }) => target),
+      })),
+    ).toEqual([]);
+    await page.screenshot({
+      path: 'test-results/noticetv-home-assistant-widget.png',
+      fullPage: true,
+    });
+    fixture.update(selected, '23.2');
+    await expect(reading.locator('.entity-value')).toContainText('23.2');
+    const pairing = await (
+      await page.request.post('/api/pairing', {
+        headers: { Origin: 'http://localhost:3001' },
+        data: {},
+      })
+    ).json();
+    const screen = await viewer.newPage();
+    await screen.goto('/display');
+    await screen.getByLabel('Pairing code', { exact: true }).fill(pairing.code);
+    await screen.getByRole('button', { name: 'Connect screen', exact: true }).click();
+    await expect(screen.locator('.dashboard')).toBeVisible();
+    expect(
+      (await screen.request.get(`/api/home-assistant/data?entities=${selected}`)).status(),
+    ).toBe(403);
+    await page.getByRole('button', { name: 'Publish', exact: true }).click();
+    const displayed = screen.getByRole('region', { name: 'Room temperature', exact: true });
+    await expect(displayed.locator('.entity-value')).toContainText('23.2', { timeout: 15_000 });
+    const response = await screen.request.get(`/api/home-assistant/data?entities=${selected}`);
+    const data = await response.text();
+    expect(data).not.toContain(fixtureToken);
+    expect(data).not.toContain(fixtureAttributeSecret);
+    expect(data).not.toContain('sensor.private_value');
+    expect((await screen.request.get('/api/home-assistant/entities')).status()).toBe(403);
+    fixture.controls.stallAuth = true;
+    fixture.dropConnections();
+    await expect(displayed).toContainText('Last known reading');
+    await expect(displayed.locator('.entity-value')).toContainText('23.2');
+    fixture.update(selected, '24.1');
+    fixture.controls.stallAuth = false;
+    fixture.dropConnections();
+    await expect(displayed.locator('.entity-value')).toContainText('24.1', { timeout: 15_000 });
+    await expect(displayed).not.toContainText('Last known reading');
+    await screen.screenshot({ path: 'test-results/noticetv-home-assistant-display.png' });
+    await page.reload();
+    await expect(
+      page.getByRole('button', { name: 'Edit Room temperature', exact: true }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Data sources', exact: true }).click();
+    await expect(page.getByLabel('Home Assistant address')).toHaveValue(fixture.url);
+    await expect(page.getByLabel('Access token')).toHaveValue('');
+    await page.getByRole('button', { name: 'Disconnect', exact: true }).click();
+    await expect(page.locator('.ha-connection-status')).toContainText('Not connected');
+    await expect(displayed.locator('.entity-value')).toHaveCount(0);
+  } finally {
+    await page.request
+      .delete('/api/home-assistant', {
+        headers: { Origin: 'http://localhost:3001' },
+        data: {},
+        timeout: 5000,
+      })
+      .catch(() => undefined);
+    await viewer.close();
+    await fixture.close();
+  }
+});
 
 test('themes preview immediately with readable widgets and a neutral editor', async ({ page }) => {
   test.setTimeout(60_000);
@@ -122,6 +252,7 @@ async function login(page: Page) {
   });
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Your dashboard', exact: true })).toBeVisible();
+  await expect(page.locator('.dashboard')).toBeVisible();
 }
 
 test('demo renders at desktop and phone sizes, with an accessible widget collection', async ({

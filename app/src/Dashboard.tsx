@@ -22,6 +22,8 @@ import {
 import { useWeather } from './use-weather';
 import { Video } from './Video';
 import { themeStyle } from './theme';
+import { EntityWidget, useHomeAssistantData } from './HomeAssistant';
+import type { HomeAssistantData } from '../shared/home-assistant';
 
 export function useNow(interval = 1000) {
   const [now, setNow] = useState(() => new Date());
@@ -48,6 +50,12 @@ export function Dashboard({
   online?: boolean;
 }) {
   const now = useNow();
+  const homeAssistant = useHomeAssistantData(
+    dashboard.widgets.flatMap((widget) =>
+      widget.type === 'entity' && widget.entityId ? [widget.entityId] : [],
+    ),
+    demo,
+  );
   const placements = layoutWidgets(dashboard.widgets);
   const rows = Math.max(6, ...placements.map((placement) => placement.row + placement.height - 1));
   const format = (options: Intl.DateTimeFormatOptions) =>
@@ -99,6 +107,8 @@ export function Dashboard({
                 now={now}
                 demo={demo}
                 passive={passive}
+                homeAssistant={homeAssistant.data}
+                homeAssistantOffline={homeAssistant.offline}
               />
               {onSelect && (
                 <button
@@ -141,14 +151,27 @@ function WidgetContent({
   now,
   demo,
   passive,
+  homeAssistant,
+  homeAssistantOffline,
 }: {
   widget: Widget;
   dashboard: DashboardData;
   now: Date;
   demo: boolean;
   passive: boolean;
+  homeAssistant: HomeAssistantData;
+  homeAssistantOffline: boolean;
 }) {
   switch (widget.type) {
+    case 'entity':
+      return (
+        <EntityWidget
+          widget={widget}
+          data={homeAssistant}
+          offline={homeAssistantOffline}
+          demo={demo}
+        />
+      );
     case 'weather':
       return <WeatherWidget widget={widget} dashboard={dashboard} demo={demo} />;
     case 'agenda':

@@ -10,6 +10,7 @@ import {
   CloudSun,
   FileText,
   Hourglass,
+  Home,
   LoaderCircle,
   MapPin,
   Plus,
@@ -28,6 +29,7 @@ import {
 } from '../shared/dashboard';
 
 import { ThemePicker } from './ThemePicker';
+import { EntitySettings } from './HomeAssistant';
 
 export const catalog: {
   type: WidgetType;
@@ -37,6 +39,14 @@ export const catalog: {
   icon: typeof CloudSun;
   color: string;
 }[] = [
+  {
+    type: 'entity',
+    title: 'Home Assistant',
+    description: 'Live sensors and status from the home you’ve already connected.',
+    source: 'Home Assistant',
+    icon: Home,
+    color: 'blue',
+  },
   {
     type: 'weather',
     title: 'Weather',
@@ -253,6 +263,7 @@ export function WidgetInspector({
   remove,
   move,
   close,
+  demo = false,
 }: {
   widget: Widget;
   index: number;
@@ -261,6 +272,7 @@ export function WidgetInspector({
   remove: () => void;
   move: (offset: number) => void;
   close: () => void;
+  demo?: boolean;
 }) {
   const item = catalog.find((entry) => entry.type === widget.type)!;
   const Icon = item.icon;
@@ -291,6 +303,7 @@ export function WidgetInspector({
           />
         </Field>
         {widget.type === 'weather' && <LocationSettings widget={widget} change={change} />}
+        {widget.type === 'entity' && <EntitySettings widget={widget} change={change} demo={demo} />}
         {widget.type === 'video' && (
           <>
             <Field

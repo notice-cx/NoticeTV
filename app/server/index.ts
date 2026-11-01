@@ -6,6 +6,7 @@ import express from 'express';
 import { createApp } from './app.js';
 import { loadEditorKey } from './auth.js';
 import { DashboardStore } from './store.js';
+import { HomeAssistantConnection } from './home-assistant.js';
 
 const development = process.env.NODE_ENV !== 'production' && !import.meta.url.includes('/build/');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), development ? '..' : '../..');
@@ -15,11 +16,13 @@ const origin = process.env.NOTICETV_ORIGIN || `http://localhost:${port}`;
 const directory = resolve(process.env.NOTICETV_DATA_DIR || resolve(root, '.data'));
 const editorKey = await loadEditorKey(directory);
 const store = await new DashboardStore(directory).initialize();
+const homeAssistant = await new HomeAssistantConnection(directory).initialize();
 const app = createApp({
   store,
   editorKey,
   origin,
   development,
+  homeAssistant,
   secureCookies: process.env.NOTICETV_SECURE_COOKIES === '1',
 });
 const server = createServer(app);
@@ -57,6 +60,7 @@ server.listen(port, host, () => {
   console.log('Open /demo to explore the design. Run npm run access-key to get your editor key.');
 });
 const shutdown = async () => {
+  homeAssistant.close();
   await closeVite?.();
   server.close(() => process.exit(0));
 };

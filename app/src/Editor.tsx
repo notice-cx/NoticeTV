@@ -33,6 +33,7 @@ import { api, ApiError, errorMessage as message, saveDashboard } from './api';
 import { AccessForm } from './Login';
 import { BoardInspector, catalog, WidgetInspector } from './Inspector';
 import { Wordmark, CloudDrawing, ScaledBoard, Modal } from './ui';
+import { HomeAssistantSetup } from './HomeAssistant';
 
 export function Editor({
   demo = false,
@@ -441,6 +442,7 @@ export function Editor({
               <h2>Your sources</h2>
               <p>Every connection has a place.</p>
             </div>
+            <HomeAssistantSetup demo={demo} />
             <div className="source-list">
               {board.widgets
                 .filter(
@@ -484,8 +486,8 @@ export function Editor({
               <div className="source-info">
                 <ShieldCheck size={20} />
                 <p>
-                  Weather and streams load directly on each screen. Each screen needs access to its
-                  sources.
+                  Home Assistant data comes through the NoticeTV server. Weather and HLS streams
+                  load directly on each screen.
                 </p>
               </div>
             </div>
@@ -493,6 +495,7 @@ export function Editor({
         ) : widget ? (
           <WidgetInspector
             key={widget.id}
+            demo={demo}
             widget={widget}
             index={board.widgets.findIndex((entry) => entry.id === widget.id)}
             total={board.widgets.length}

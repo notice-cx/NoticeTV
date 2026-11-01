@@ -22,6 +22,7 @@ and preview the whole screen before publishing. Export a layout to keep it or sh
 | Widget          | What it brings to the screen                                                                                                             |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | **Weather**     | Current conditions and a five-day forecast from [Open-Meteo](https://open-meteo.com/), with city search and Celsius/Fahrenheit settings. |
+| **Home Assistant** | Live sensor readings and entity status through one shared connection, with searchable entity selection and outage indicators. |
 | **Live video**  | HLS `.m3u8` streams, muted autoplay, fit/fill sizing, and recovery after playback interruptions.                                         |
 | **Agenda**      | Plans you enter in NoticeTV, a date rail, and a day-by-day view of the year's progress.                                                  |
 | **Note**        | Plain text for reminders, a message, or a thought for the day.                                                                           |
@@ -50,13 +51,15 @@ Also available: [Midnight](docs/images/noticetv-theme-midnight.png) for deep nav
 ## How it fits together
 
 Run one NoticeTV server on your own machine. Open its editor on your phone or laptop and its
-display page on the TV. The server stores the dashboard; each browser loads weather and media
-directly from the configured sources.
+display page on the TV. The server stores the dashboard and supplies selected Home Assistant
+entity values. Each browser loads standalone weather and HLS media directly from its sources.
 
 ```mermaid
 flowchart LR
     editor("Phone or laptop<br/>Dashboard editor") -->|"Save and publish"| server("NoticeTV server<br/>Saved dashboard")
     server -->|"Published layout"| screen("Paired TV<br/>Browser or NoticeTV OS")
+    ha("Home Assistant<br/>Devices and integrations") -->|"Authenticated live data"| server
+    server -->|"Selected published entity values"| screen
     sources("Weather and HLS<br/>Data sources") -->|"Load directly"| screen
     classDef default fill:#f5f6f8,stroke:#cfd6e2,color:#283346,stroke-width:1px,filter:none;
     classDef host fill:#e5edf9,stroke:#b8c9e3,color:#233858;
@@ -115,6 +118,13 @@ npm --prefix app run access-key
 
 Enter that key in the editor, connect your sources, and publish.
 
+For Home Assistant, open **Sources**, connect your HA address with a long-lived access token,
+then add a **Home Assistant** widget and choose an entity. Credentials stay on the server;
+paired screens receive only selected values from the published dashboard. See the
+[Home Assistant setup guide](app/README.md#home-assistant) for connection and outage behavior.
+
+[![Home Assistant connection settings and a live entity widget, using fictional readings.](docs/images/noticetv-home-assistant.png)](docs/images/noticetv-home-assistant.png)
+
 The default server accepts connections from this computer. Before connecting a TV or phone,
 configure its network address using the [hosting guide](app/README.md#access-from-another-device).
 The guide also covers [Docker](app/README.md#docker), HTTPS, persistent storage, and backups.
@@ -134,8 +144,9 @@ requirements, and appliance settings. Installing the OS erases the selected driv
 ## Current scope
 
 This is early software with one dashboard per server and multiple paired screens. Real dashboards
-start with empty source connections. Agenda events are entered manually; Home Assistant
-authentication and external calendar synchronization are not implemented in this version.
+start with empty source connections. Home Assistant currently supplies live entity states.
+HA-backed calendars, weather forecasts, history charts, and authenticated cameras/video are
+not implemented yet. Agenda events are entered manually.
 
 ## Contributing
 

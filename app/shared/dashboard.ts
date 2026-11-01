@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { defaultTheme, themeIds } from './themes.js';
+import { entityIdSchema } from './home-assistant.js';
 
 const text = (length: number) => z.string().trim().max(length);
 const httpUrl = z
@@ -36,6 +37,11 @@ function validLocalDateTime(value: string) {
 }
 
 export const widgetSchema = z.discriminatedUnion('type', [
+  z.object({
+    ...base,
+    type: z.literal('entity'),
+    entityId: z.union([z.literal(''), entityIdSchema]),
+  }),
   z.object({
     ...base,
     type: z.literal('weather'),
@@ -137,6 +143,8 @@ export function createWidget<T extends WidgetType>(type: T, id?: string): Widget
 export function createWidget(type: WidgetType, id: string = newId()): Widget {
   const common = { id, width: 4 as const, height: 3 as const };
   switch (type) {
+    case 'entity':
+      return { ...common, type, title: 'Home Assistant', entityId: '', width: 3, height: 3 };
     case 'weather':
       return {
         ...common,

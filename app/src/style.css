@@ -916,6 +916,182 @@ button svg {
   font-size: 10px;
   line-height: 1.8;
 }
+.ha-connection {
+  margin: 16px;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--inset);
+}
+.ha-connection-heading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.ha-connection-heading h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 550;
+}
+.ha-connection-heading p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.ha-connection-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.ha-connection-status > span {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+}
+.ha-connection fieldset {
+  border: 0;
+  padding: 0;
+  margin: 16px 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ha-connection .field-hint {
+  margin: 0;
+  line-height: 1.7;
+}
+.ha-connection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.ha-connection-actions button {
+  font-size: 10px;
+}
+.ha-connection > .field-hint,
+.ha-connection > .ha-error {
+  margin-top: 14px;
+}
+.ha-error {
+  color: var(--negative);
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.ha-entity-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.ha-search {
+  position: relative;
+  display: block;
+}
+.ha-search > svg {
+  position: absolute;
+  left: 10px;
+  top: 12px;
+  color: var(--muted);
+}
+.ha-search > input {
+  padding-left: 32px;
+}
+.ha-picker-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.widget-entity {
+  container-type: size;
+}
+.entity-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(12px, 9cqh, 28px);
+  min-width: 0;
+}
+.entity-widget .widget-heading {
+  color: var(--secondary);
+}
+.entity-value {
+  margin: auto 0 clamp(4px, 4cqh, 10px);
+  padding-top: 4px;
+  font-size: clamp(32px, 30cqh, 64px);
+  font-weight: 450;
+  letter-spacing: -3px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.entity-value.is-text {
+  font-size: 32px;
+  letter-spacing: -1px;
+  max-height: 110px;
+  overflow: hidden;
+}
+.entity-value > span {
+  margin-left: 8px;
+  font-size: 24px;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.entity-name {
+  flex-shrink: 0;
+  color: var(--secondary);
+  font-size: 13px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.entity-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: clamp(4px, 4cqh, 16px);
+  color: var(--muted);
+  font-size: 11px;
+}
+.entity-status small {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+}
+.entity-empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  height: 100%;
+  gap: 10px;
+  color: var(--muted);
+}
+.entity-empty h3 {
+  color: var(--text);
+  margin: 0;
+  font-size: 20px;
+  font-weight: 450;
+}
+.entity-empty p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+@container (max-height: 165px) {
+  .entity-name {
+    display: none;
+  }
+}
 .toast {
   position: fixed;
   bottom: 25px;

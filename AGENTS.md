@@ -32,6 +32,10 @@ show the NoticeTV dashboard, NoticeOS's Wall, or any URL. The OS image does not 
   `app/shared/dashboard.ts`. Format with Prettier; run the checks in `CONTRIBUTING.md`.
 - **Published screens and editing have separate access.** A paired display may read the published
   dashboard but may not read drafts, change configuration, or issue another pairing code.
+- **Home Assistant is the integration backend.** Its shared server-side connection lives in
+  `app/server/home-assistant.ts`. Credentials stay in the protected data directory, outside dashboard
+  documents. Editors discover entities; displays receive only safe values selected by published
+  widgets. Do not add arbitrary HA command forwarding or return raw entity attributes.
 - **Dashboard themes use semantic colors.** Palettes live in `app/shared/themes.ts`; widgets use
   their CSS variables. Graphite is the default. The editor stays neutral independently of the dashboard.
 - **Dashboard tests use local fixtures.** No live cameras, Home Assistant installations, or external
