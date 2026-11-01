@@ -2,7 +2,9 @@ import express, { type RequestHandler } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { randomInt } from 'node:crypto';
 import { z } from 'zod';
-import { dashboardSchema } from '../shared/dashboard.js';
+import { dashboardSchema, widgetSchema, validTimeZone } from '../shared/dashboard.js';
+import { isRichWidget, widgetEntityIds } from '../shared/rich-widgets.js';
+import { HAWidgets } from './ha-widgets.js';
 import {
   clearSessionCookie,
   equalSecret,
@@ -34,6 +36,7 @@ export function createApp({
   const app = express();
   const expected = new URL(origin);
   const pairings = new Map<string, number>();
+  const haWidgets = new HAWidgets(homeAssistant);
   app.disable('x-powered-by');
   app.use((request, response, next) => {
     if (request.get('host') !== expected.host) {
@@ -187,13 +190,7 @@ export function createApp({
       return;
     }
     if (readSession(request.headers.cookie, editorKey) !== 'editor') {
-      const allowed = new Set(
-        store
-          .read()
-          .published.widgets.flatMap((widget) =>
-            widget.type === 'entity' && widget.entityId ? [widget.entityId] : [],
-          ),
-      );
+      const allowed = new Set(store.read().published.widgets.flatMap(widgetEntityIds));
       if (result.data.some((id) => !allowed.has(id))) {
         response.status(403).json({ error: 'This entity is not part of the published dashboard.' });
         return;
@@ -201,6 +198,79 @@ export function createApp({
     }
     response.json(homeAssistant.data(result.data));
   });
+
+  const widgetInput = z.object({
+    widget: widgetSchema,
+    timeZone: z.string().max(100).refine(validTimeZone),
+    units: z.enum(['celsius', 'fahrenheit']),
+  });
+  const preview =
+    (snapshot: boolean): RequestHandler =>
+    async (request, response, next) => {
+      const input = widgetInput.safeParse(request.body);
+      if (
+        !input.success ||
+        !isRichWidget(input.data.widget) ||
+        (snapshot && (input.data.widget.type !== 'ha-camera' || !input.data.widget.entityId))
+      ) {
+        response
+          .status(400)
+          .json({ error: 'Choose a valid Home Assistant widget and its sources.' });
+        return;
+      }
+      try {
+        const { widget, timeZone, units } = input.data;
+        if (snapshot && widget.type === 'ha-camera') {
+          const image = await haWidgets.snapshot(widget.entityId);
+          response
+            .set({
+              'Content-Type': image.type,
+              'X-NoticeTV-Captured-At': image.capturedAt,
+              'X-NoticeTV-Stale': image.stale ? '1' : '0',
+            })
+            .send(image.body);
+        } else if (isRichWidget(widget))
+          response.json(await haWidgets.data(widget, timeZone, units));
+      } catch (error) {
+        if (error instanceof HomeAssistantError)
+          response.status(503).json({ error: error.message });
+        else next(error);
+      }
+    };
+  const published =
+    (snapshot: boolean): RequestHandler =>
+    async (request, response, next) => {
+      const board = store.read().published;
+      const widget = board.widgets.find((entry) => entry.id === request.params.id);
+      if (
+        !widget ||
+        !isRichWidget(widget) ||
+        (snapshot && (widget.type !== 'ha-camera' || !widget.entityId))
+      ) {
+        response.status(404).json({ error: 'This Home Assistant widget is not published.' });
+        return;
+      }
+      try {
+        if (snapshot && widget.type === 'ha-camera') {
+          const image = await haWidgets.snapshot(widget.entityId);
+          response
+            .set({
+              'Content-Type': image.type,
+              'X-NoticeTV-Captured-At': image.capturedAt,
+              'X-NoticeTV-Stale': image.stale ? '1' : '0',
+            })
+            .send(image.body);
+        } else response.json(await haWidgets.data(widget, board.timeZone, board.units));
+      } catch (error) {
+        if (error instanceof HomeAssistantError)
+          response.status(503).json({ error: error.message });
+        else next(error);
+      }
+    };
+  app.post('/api/home-assistant/widget-preview', authorized(true), preview(false));
+  app.post('/api/home-assistant/camera-preview', authorized(true), preview(true));
+  app.get('/api/home-assistant/widgets/:id/data', authorized(false), published(false));
+  app.get('/api/home-assistant/widgets/:id/snapshot', authorized(false), published(true));
 
   const save =
     (publish: boolean): RequestHandler =>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+  <defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#a4b4c3"/><stop offset="1" stop-color="#e3ded1"/></linearGradient><linearGradient id="wall"><stop stop-color="#b8b2a6"/><stop offset="1" stop-color="#e4dfd3"/></linearGradient></defs>
+  <path fill="url(#sky)" d="M0 0h960v640H0z"/><path fill="#8e998c" d="M0 280 190 250 430 300 720 240 960 290v350H0z"/>
+  <path fill="url(#wall)" d="M170 130h620v430H170z"/><path fill="#656967" d="m130 140 350-90 350 90-20 30-330-76-330 76z"/>
+  <path fill="#c7c2b6" d="M145 558h670v30H145z"/><path fill="#a9a99f" d="M110 588h740v25H110z"/>
+  <rect x="385" y="226" width="190" height="332" rx="3" fill="#424f54"/><path fill="#789196" d="M410 253h140v130H410z"/><path stroke="#becac7" stroke-width="6" d="M480 253v130m-70-65h140"/>
+  <rect x="410" y="410" width="140" height="120" rx="2" fill="#4e5e62"/><circle cx="546" cy="397" r="5" fill="#e6d4a9"/>
+  <path fill="#6c807e" d="M220 255h100v135H220zm420 0h100v135H640z"/><path stroke="#d9d9cd" stroke-width="7" d="M270 255v135m-50-67h100m370-68v135m-50-67h100"/>
+  <rect x="235" y="485" width="65" height="75" rx="5" fill="#777366"/><path d="M267 485c-75-90-65-130 0-85 65-75 80-10 0 85" fill="#677d6f"/>
+  <rect x="660" y="485" width="65" height="75" rx="5" fill="#777366"/><path d="M692 485c-75-90-65-130 0-85 65-75 80-10 0 85" fill="#677d6f"/>
+  <rect x="22" y="22" width="258" height="35" rx="6" fill="#172026" fill-opacity=".8"/><text x="40" y="45" fill="#e3e8e9" font-family="sans-serif" font-size="13" letter-spacing="2">ILLUSTRATED CAMERA PREVIEW</text>
+</svg>

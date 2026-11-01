@@ -1870,8 +1870,8 @@ button svg {
 .is-passive {
   cursor: default;
 }
-.is-passive.hide-cursor,
-.is-passive.hide-cursor * {
+.dashboard.hide-cursor,
+.dashboard.hide-cursor * {
   cursor: none;
 }
 .is-passive a {

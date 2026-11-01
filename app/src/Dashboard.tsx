@@ -24,6 +24,8 @@ import { Video } from './Video';
 import { themeStyle } from './theme';
 import { EntityWidget, useHomeAssistantData } from './HomeAssistant';
 import type { HomeAssistantData } from '../shared/home-assistant';
+import { isRichWidget } from '../shared/rich-widgets';
+import { RichWidgetView } from './RichWidgets';
 
 export function useNow(interval = 1000) {
   const [now, setNow] = useState(() => new Date());
@@ -41,6 +43,7 @@ export function Dashboard({
   selected,
   onSelect,
   online = true,
+  published = false,
 }: {
   dashboard: DashboardData;
   demo?: boolean;
@@ -48,6 +51,7 @@ export function Dashboard({
   selected?: string | null;
   onSelect?: (id: string) => void;
   online?: boolean;
+  published?: boolean;
 }) {
   const now = useNow();
   const homeAssistant = useHomeAssistantData(
@@ -66,7 +70,7 @@ export function Dashboard({
     <div
       data-theme={dashboard.theme}
       style={themeStyle(dashboard.theme)}
-      className={`dashboard ${passive ? 'is-passive' : ''} ${passive && dashboard.hideCursor ? 'hide-cursor' : ''} ${onSelect ? 'is-editable' : ''}`}
+      className={`dashboard ${passive ? 'is-passive' : ''} ${!onSelect && dashboard.hideCursor ? 'hide-cursor' : ''} ${onSelect ? 'is-editable' : ''}`}
     >
       <header className="dashboard-header">
         <div className="dashboard-intro">
@@ -109,6 +113,7 @@ export function Dashboard({
                 passive={passive}
                 homeAssistant={homeAssistant.data}
                 homeAssistantOffline={homeAssistant.offline}
+                published={published}
               />
               {onSelect && (
                 <button
@@ -153,6 +158,7 @@ function WidgetContent({
   passive,
   homeAssistant,
   homeAssistantOffline,
+  published,
 }: {
   widget: Widget;
   dashboard: DashboardData;
@@ -161,7 +167,19 @@ function WidgetContent({
   passive: boolean;
   homeAssistant: HomeAssistantData;
   homeAssistantOffline: boolean;
+  published: boolean;
 }) {
+  if (isRichWidget(widget))
+    return (
+      <RichWidgetView
+        widget={widget}
+        dashboard={dashboard}
+        now={now}
+        demo={demo}
+        passive={passive}
+        published={published}
+      />
+    );
   switch (widget.type) {
     case 'entity':
       return (

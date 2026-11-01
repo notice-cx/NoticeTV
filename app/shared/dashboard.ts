@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import { defaultTheme, themeIds } from './themes.js';
 import { entityIdSchema } from './home-assistant.js';
+import {
+  homeWeatherSchema,
+  connectedAgendaSchema,
+  indoorClimateSchema,
+  readinessSchema,
+  homeStatusSchema,
+  cameraSchema,
+} from './rich-widgets.js';
 
 const text = (length: number) => z.string().trim().max(length);
 const httpUrl = z
@@ -37,6 +45,12 @@ function validLocalDateTime(value: string) {
 }
 
 export const widgetSchema = z.discriminatedUnion('type', [
+  homeWeatherSchema.extend(base),
+  connectedAgendaSchema.extend(base),
+  indoorClimateSchema.extend(base),
+  readinessSchema.extend(base),
+  homeStatusSchema.extend(base),
+  cameraSchema.extend(base),
   z.object({
     ...base,
     type: z.literal('entity'),
@@ -100,6 +114,7 @@ export const dashboardSchema = z
     hour24: z.boolean(),
     theme: z.enum(themeIds).default(defaultTheme),
     hideCursor: z.boolean().default(false),
+    allowDisplayInteractions: z.boolean().default(false),
     widgets: z.array(widgetSchema).min(1).max(20),
   })
   .superRefine((board, context) => {
@@ -143,6 +158,58 @@ export function createWidget<T extends WidgetType>(type: T, id?: string): Widget
 export function createWidget(type: WidgetType, id: string = newId()): Widget {
   const common = { id, width: 4 as const, height: 3 as const };
   switch (type) {
+    case 'ha-weather':
+      return {
+        ...common,
+        type,
+        title: 'Outside',
+        width: 3,
+        height: 6,
+        entityId: '',
+        temperatureEntityId: '',
+        humidityEntityId: '',
+        aqiEntityId: '',
+        sunEntityId: '',
+        secondaryEntityId: '',
+      };
+    case 'ha-agenda':
+      return {
+        ...common,
+        type,
+        title: 'The week ahead',
+        width: 5,
+        height: 6,
+        calendars: [],
+        view: 'week',
+        hideFinished: true,
+        hideDeclined: true,
+        hideDuplicates: true,
+        showMultiDay: false,
+      };
+    case 'ha-climate':
+      return {
+        ...common,
+        type,
+        title: 'Indoor climate',
+        temperatures: [
+          { entityId: '', label: 'Room 1' },
+          { entityId: '', label: 'Room 2' },
+        ],
+        co2EntityId: '',
+      };
+    case 'ha-readiness':
+      return { ...common, type, title: 'Readiness', width: 4, height: 3, entityId: '' };
+    case 'ha-status':
+      return { ...common, type, title: 'Home status', contacts: [], motionEntityId: '' };
+    case 'ha-camera':
+      return {
+        ...common,
+        type,
+        title: 'Front door',
+        entityId: '',
+        motionEntityId: '',
+        fit: 'contain',
+      };
     case 'entity':
       return { ...common, type, title: 'Home Assistant', entityId: '', width: 3, height: 3 };
     case 'weather':
@@ -176,6 +243,16 @@ export function createWidget(type: WidgetType, id: string = newId()): Widget {
   }
 }
 
+export function createHomeWidgets(): Widget[] {
+  return [
+    createWidget('ha-weather'),
+    createWidget('ha-agenda'),
+    { ...createWidget('ha-camera'), height: 2, fit: 'cover' },
+    { ...createWidget('ha-climate'), height: 2 },
+    { ...createWidget('ha-readiness'), height: 2 },
+  ];
+}
+
 export function createDashboard(): Dashboard {
   return {
     schemaVersion: 1,
@@ -186,6 +263,7 @@ export function createDashboard(): Dashboard {
     hour24: false,
     theme: defaultTheme,
     hideCursor: false,
+    allowDisplayInteractions: false,
     widgets: ['weather', 'agenda', 'video', 'countdown', 'note'].map((type, index) =>
       createWidget(type as WidgetType, `widget-${index + 1}`),
     ),

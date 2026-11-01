@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -18,6 +18,10 @@ import {
   Search,
   Trash2,
   X,
+  Thermometer,
+  HeartPulse,
+  ShieldCheck,
+  Camera,
 } from 'lucide-react';
 import { z } from 'zod';
 import {
@@ -30,6 +34,9 @@ import {
 
 import { ThemePicker } from './ThemePicker';
 import { EntitySettings } from './HomeAssistant';
+import { Field } from './Field';
+import { RichInspector } from './RichInspector';
+import { isRichWidget } from '../shared/rich-widgets';
 
 export const catalog: {
   type: WidgetType;
@@ -39,6 +46,54 @@ export const catalog: {
   icon: typeof CloudSun;
   color: string;
 }[] = [
+  {
+    type: 'ha-weather',
+    title: 'Home weather',
+    description: 'Outdoor readings, forecasts, sun and moon, all through Home Assistant.',
+    source: 'Home Assistant',
+    icon: CloudSun,
+    color: 'sand',
+  },
+  {
+    type: 'ha-agenda',
+    title: 'Connected calendar',
+    description: 'A week or month of plans, calendar colors, and meeting reminders.',
+    source: 'Home Assistant',
+    icon: CalendarDays,
+    color: 'silver',
+  },
+  {
+    type: 'ha-climate',
+    title: 'Indoor climate',
+    description: 'Room temperatures and CO₂, with a day of history in view.',
+    source: 'Home Assistant',
+    icon: Thermometer,
+    color: 'peach',
+  },
+  {
+    type: 'ha-readiness',
+    title: 'Readiness',
+    description: 'Today’s score and the shape of your week.',
+    source: 'Home Assistant',
+    icon: HeartPulse,
+    color: 'lavender',
+  },
+  {
+    type: 'ha-status',
+    title: 'Home status',
+    description: 'Doors, windows, and motion, without the guesswork.',
+    source: 'Home Assistant',
+    icon: ShieldCheck,
+    color: 'blue',
+  },
+  {
+    type: 'ha-camera',
+    title: 'Camera',
+    description: 'Authenticated snapshots with motion status and a clear update time.',
+    source: 'Home Assistant',
+    icon: Camera,
+    color: 'silver',
+  },
   {
     type: 'entity',
     title: 'Home Assistant',
@@ -96,29 +151,6 @@ export const catalog: {
     color: 'silver',
   },
 ];
-
-export function Field({
-  label,
-  children,
-  hint,
-  required = false,
-}: {
-  label: string;
-  children: ReactNode;
-  hint?: string;
-  required?: boolean;
-}) {
-  return (
-    <label className="field">
-      <span>
-        {label}
-        {required && <span aria-hidden="true"> *</span>}
-      </span>
-      {children}
-      {hint && <small>{hint}</small>}
-    </label>
-  );
-}
 
 export function BoardInspector({
   board,
@@ -192,7 +224,7 @@ export function BoardInspector({
         >
           <MapPin size={12} /> Use this device’s time zone
         </button>
-        <Field label="Temperature">
+        <Field label="Temperature" group>
           <div className="segmented">
             {(['celsius', 'fahrenheit'] as const).map((unit) => (
               <button
@@ -206,7 +238,7 @@ export function BoardInspector({
             ))}
           </div>
         </Field>
-        <Field label="Clock">
+        <Field label="Clock" group>
           <div className="segmented">
             <button
               aria-pressed={!board.hour24}
@@ -225,6 +257,21 @@ export function BoardInspector({
           </div>
         </Field>
         <div className="field-divider" />
+        <div className="inspector-tip">
+          <label className="cursor-setting">
+            <input
+              type="checkbox"
+              checked={board.allowDisplayInteractions}
+              onChange={(event) =>
+                change({ ...board, allowDisplayInteractions: event.target.checked })
+              }
+            />
+            <span>
+              Allow display interactions
+              <small>Change calendar views, read event details, and enlarge snapshots.</small>
+            </span>
+          </label>
+        </div>
         <div className="inspector-tip">
           <label className="cursor-setting">
             <input
@@ -264,6 +311,7 @@ export function WidgetInspector({
   move,
   close,
   demo = false,
+  openSources,
 }: {
   widget: Widget;
   index: number;
@@ -273,6 +321,7 @@ export function WidgetInspector({
   move: (offset: number) => void;
   close: () => void;
   demo?: boolean;
+  openSources: () => void;
 }) {
   const item = catalog.find((entry) => entry.type === widget.type)!;
   const Icon = item.icon;
@@ -303,6 +352,9 @@ export function WidgetInspector({
           />
         </Field>
         {widget.type === 'weather' && <LocationSettings widget={widget} change={change} />}
+        {isRichWidget(widget) && (
+          <RichInspector widget={widget} change={change} demo={demo} openSources={openSources} />
+        )}
         {widget.type === 'entity' && <EntitySettings widget={widget} change={change} demo={demo} />}
         {widget.type === 'video' && (
           <>
@@ -318,7 +370,7 @@ export function WidgetInspector({
                 onChange={(event) => change({ ...widget, url: event.target.value })}
               />
             </Field>
-            <Field label="Picture fit">
+            <Field label="Picture fit" group>
               <div className="segmented">
                 <button
                   className={widget.fit === 'contain' ? 'active' : ''}

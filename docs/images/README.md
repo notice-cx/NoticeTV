@@ -23,7 +23,11 @@ the capture server never receives HA credentials or contacts an HA installation.
 Every external browser request is blocked. The browser,
 server, and temporary data are removed when capture finishes.
 
-The script writes thirteen PNGs into this directory. Review them after interface changes, then commit
+The four rich-widget captures use `/demo?home` and `/demo?home&cameras`. Calendar events, readings,
+and histories are fictional, and the camera image is an original illustration. The real household
+reference is not included in the repository. These previews make no HA or external-source requests.
+
+The script writes seventeen PNGs into this directory. Review them after interface changes, then commit
 the updated images alongside the relevant documentation. The screenshots contain no data from a
 real installation. `NOTICETV_DOCS_PORT` selects another local port if the default, 3002, is busy.
 

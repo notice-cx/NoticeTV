@@ -14,11 +14,12 @@ browser dependency licenses into `dist/licenses/`, served at `/licenses/`.
 | Lucide icons                | ISC                       | https://github.com/lucide-icons/lucide                        |
 | hls.js                      | Apache-2.0                | https://github.com/video-dev/hls.js                           |
 | Home Assistant JS WebSocket | Apache-2.0                | https://github.com/home-assistant/home-assistant-js-websocket |
+| SunCalc                     | BSD-2-Clause              | https://github.com/mourner/suncalc                            |
 | ws (test fixtures)          | MIT                       | https://github.com/websockets/ws                              |
 | Inter                       | SIL Open Font License 1.1 | `public/fonts/Inter-LICENSE.txt`                              |
 | Stack Sans Notch            | SIL Open Font License 1.1 | `public/fonts/StackSansNotch-LICENSE.txt`                     |
 
-The fonts are shared with NoticeTV's existing brand assets. The coast illustration, fictional
+The fonts are shared with NoticeTV's existing brand assets. The coast and front-door illustrations, fictional
 demo content, and dashboard styling are original NoticeTV assets. No broadcaster footage,
 home-camera image, publisher logo, or data from a real household is bundled.
 

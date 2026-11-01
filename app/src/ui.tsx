@@ -38,6 +38,7 @@ export function ScaledBoard({
   selected,
   onSelect,
   online = true,
+  published = false,
 }: {
   board: DashboardData;
   demo?: boolean;
@@ -45,6 +46,7 @@ export function ScaledBoard({
   selected?: string | null;
   onSelect?: (id: string) => void;
   online?: boolean;
+  published?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -71,6 +73,7 @@ export function ScaledBoard({
           selected={selected}
           onSelect={onSelect}
           online={online}
+          published={published}
         />
       </div>
     </div>
