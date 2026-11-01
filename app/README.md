@@ -16,6 +16,16 @@ Visit `http://localhost:3000/demo` for the fictional workspace, or `/` for your 
 In a second terminal, `npm run access-key` prints the editor key. It is created automatically
 when the server starts, stored outside source control, and never sent to a display.
 
+`npm run dev` listens on `0.0.0.0`. To open it from another device, set the address that
+both browsers will use before starting it:
+
+```sh
+NOTICETV_ORIGIN="http://YOUR_LAN_IP:3000" npm run dev
+```
+
+Replace `YOUR_LAN_IP` with your computer's LAN IP, then open that address on both
+devices. Set `NOTICETV_HOST=127.0.0.1` to restrict development to this computer.
+
 The demo is temporary. Its Save and Publish buttons explain how to open a real workspace;
 Export layout downloads the current demo configuration.
 
@@ -45,7 +55,8 @@ Back up that volume to preserve both your dashboard and access.
 
 ### Access from another device
 
-The default listener is local to the host. For a home-network instance, copy `.env.example` to
+The built server defaults to a local listener; development listens on all interfaces. For a
+home-network Docker instance, copy `.env.example` to
 `.env` and set the address that **both the editor and every screen** will use:
 
 ```dotenv
@@ -69,14 +80,14 @@ HTTP sources may be blocked as mixed content on an HTTPS dashboard; use HTTPS so
 
 ### Configuration
 
-| Variable                  | Default                 | Meaning                                                       |
-| ------------------------- | ----------------------- | ------------------------------------------------------------- |
-| `PORT`                    | `3000`                  | Server port.                                                  |
-| `NOTICETV_HOST`           | `127.0.0.1`             | Listener address; Docker uses `0.0.0.0` inside its container. |
-| `NOTICETV_ORIGIN`         | `http://localhost:3000` | The single browser origin accepted by the server.             |
-| `NOTICETV_DATA_DIR`       | `app/.data`             | Dashboard and key directory; Docker uses `/data`.             |
-| `NOTICETV_EDITOR_KEY`     | Generated file          | Override with a secret of 24 to 256 characters.               |
-| `NOTICETV_SECURE_COOKIES` | `0`                     | Use `1` when the browser connects over HTTPS.                 |
+| Variable                  | Default                                   | Meaning                                                       |
+| ------------------------- | ----------------------------------------- | ------------------------------------------------------------- |
+| `PORT`                    | `3000`                                    | Server port.                                                  |
+| `NOTICETV_HOST`           | Dev: `0.0.0.0`; built server: `127.0.0.1` | Listener address; Docker uses `0.0.0.0` inside its container. |
+| `NOTICETV_ORIGIN`         | `http://localhost:3000`                   | The single browser origin accepted by the server.             |
+| `NOTICETV_DATA_DIR`       | `app/.data`                               | Dashboard and key directory; Docker uses `/data`.             |
+| `NOTICETV_EDITOR_KEY`     | Generated file                            | Override with a secret of 24 to 256 characters.               |
+| `NOTICETV_SECURE_COOKIES` | `0`                                       | Use `1` when the browser connects over HTTPS.                 |
 
 Relative data paths resolve from the working directory. Run one server process per data directory.
 Keep credentials in environment configuration or the protected data directory.
