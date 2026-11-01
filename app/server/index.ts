@@ -11,7 +11,7 @@ import { HomeAssistantConnection } from './home-assistant.js';
 const development = process.env.NODE_ENV !== 'production' && !import.meta.url.includes('/build/');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), development ? '..' : '../..');
 const port = Number(process.env.PORT || 3000);
-const host = process.env.NOTICETV_HOST || '127.0.0.1';
+const host = process.env.NOTICETV_HOST || (development ? '0.0.0.0' : '127.0.0.1');
 const origin = process.env.NOTICETV_ORIGIN || `http://localhost:${port}`;
 const directory = resolve(process.env.NOTICETV_DATA_DIR || resolve(root, '.data'));
 const editorKey = await loadEditorKey(directory);
