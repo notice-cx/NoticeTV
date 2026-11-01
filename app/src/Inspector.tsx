@@ -4,18 +4,15 @@ import {
   ArrowUp,
   ArrowUpRight,
   CalendarDays,
-  Check,
   ChevronRight,
   Clock3,
   CloudSun,
   FileText,
   Hourglass,
   Home,
-  LoaderCircle,
   MapPin,
   Plus,
   Radio,
-  Search,
   Trash2,
   X,
   Thermometer,
@@ -23,7 +20,6 @@ import {
   ShieldCheck,
   Camera,
 } from 'lucide-react';
-import { z } from 'zod';
 import {
   newId,
   validTimeZone,
@@ -35,6 +31,7 @@ import {
 import { ThemePicker } from './ThemePicker';
 import { EntitySettings } from './HomeAssistant';
 import { Field } from './Field';
+import { LocationSearch } from './LocationSearch';
 import { RichInspector } from './RichInspector';
 import { isRichWidget } from '../shared/rich-widgets';
 
@@ -49,8 +46,8 @@ export const catalog: {
   {
     type: 'ha-weather',
     title: 'Home weather',
-    description: 'Outdoor readings, forecasts, sun and moon, all through Home Assistant.',
-    source: 'Home Assistant',
+    description: 'Outdoor readings, forecasts, sun and moon, with a second location.',
+    source: 'Home Assistant · Open-Meteo',
     icon: CloudSun,
     color: 'sand',
   },
@@ -106,7 +103,7 @@ export const catalog: {
     type: 'weather',
     title: 'Weather',
     description: 'A sense of what’s outside. Now, and the days ahead.',
-    source: 'Open-Meteo',
+    source: 'Open-Meteo · Home Assistant temperature',
     icon: CloudSun,
     color: 'sand',
   },
@@ -351,8 +348,22 @@ export function WidgetInspector({
             onChange={(event) => change({ ...widget, title: event.target.value })}
           />
         </Field>
-        {widget.type === 'weather' && <LocationSettings widget={widget} change={change} />}
-        {isRichWidget(widget) && (
+        {widget.type === 'weather' && (
+          <LocationSearch
+            key={widget.id}
+            value={
+              widget.latitude !== null && widget.longitude !== null
+                ? {
+                    location: widget.location,
+                    latitude: widget.latitude,
+                    longitude: widget.longitude,
+                  }
+                : null
+            }
+            change={(location) => change({ ...widget, ...location })}
+          />
+        )}
+        {(isRichWidget(widget) || widget.type === 'weather') && (
           <RichInspector widget={widget} change={change} demo={demo} openSources={openSources} />
         )}
         {widget.type === 'entity' && <EntitySettings widget={widget} change={change} demo={demo} />}
@@ -599,129 +610,6 @@ export function WidgetInspector({
           <Trash2 size={14} /> Remove widget
         </button>
       </div>
-    </>
-  );
-}
-
-const placesSchema = z.object({
-  results: z
-    .array(
-      z.object({
-        id: z.number(),
-        name: z.string(),
-        latitude: z.number(),
-        longitude: z.number(),
-        country: z.string().optional(),
-        admin1: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
-type Place = NonNullable<z.infer<typeof placesSchema>['results']>[number];
-function LocationSettings({
-  widget,
-  change,
-}: {
-  widget: Extract<Widget, { type: 'weather' }>;
-  change: (widget: Widget) => void;
-}) {
-  const [query, setQuery] = useState(widget.location);
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  async function search() {
-    if (query.trim().length < 2 || busy) return;
-    setBusy(true);
-    setError('');
-    try {
-      const params = new URLSearchParams({
-        name: query.trim(),
-        count: '5',
-        language: 'en',
-        format: 'json',
-      });
-      const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`, {
-        credentials: 'omit',
-        referrerPolicy: 'no-referrer',
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (!response.ok) throw new Error();
-      const data = placesSchema.parse(await response.json());
-      setPlaces(data.results || []);
-      if (!data.results?.length) setError('No locations found. Try a nearby town or city.');
-    } catch {
-      setError('Location search is unavailable. Try again when your connection returns.');
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <>
-      <Field label="Location">
-        <div className="search-field">
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search a town or city"
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                void search();
-              }
-            }}
-          />
-          <button
-            className="icon-button"
-            onClick={() => {
-              void search();
-            }}
-            disabled={busy || query.trim().length < 2}
-            aria-label="Search locations"
-          >
-            {busy ? <LoaderCircle size={15} className="spin" /> : <Search size={15} />}
-          </button>
-        </div>
-      </Field>
-      {error && (
-        <p className="inline-error" role="alert">
-          {error}
-        </p>
-      )}
-      {places.length > 0 && (
-        <div className="place-results">
-          {places.map((place) => (
-            <button
-              key={place.id}
-              onClick={() => {
-                change({
-                  ...widget,
-                  location: place.name,
-                  latitude: place.latitude,
-                  longitude: place.longitude,
-                });
-                setQuery(place.name);
-                setPlaces([]);
-              }}
-            >
-              <MapPin size={13} />
-              <span>
-                {place.name}
-                <small>{[place.admin1, place.country].filter(Boolean).join(', ')}</small>
-              </span>
-              <ChevronRight size={12} />
-            </button>
-          ))}
-        </div>
-      )}
-      {widget.latitude !== null && (
-        <div className="connected-location">
-          <Check size={12} />
-          <span>
-            {widget.location}
-            <small>Forecast connected</small>
-          </span>
-        </div>
-      )}
     </>
   );
 }

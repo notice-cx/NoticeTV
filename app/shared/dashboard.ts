@@ -62,6 +62,10 @@ export const widgetSchema = z.discriminatedUnion('type', [
     location: text(120),
     latitude: z.number().min(-90).max(90).nullable(),
     longitude: z.number().min(-180).max(180).nullable(),
+    temperatureEntityId: z
+      .union([z.literal(''), entityIdSchema])
+      .refine((id) => !id || id.startsWith('sensor.'), 'Choose a temperature sensor.')
+      .default(''),
   }),
   z.object({
     ...base,
@@ -171,6 +175,8 @@ export function createWidget(type: WidgetType, id: string = newId()): Widget {
         aqiEntityId: '',
         sunEntityId: '',
         secondaryEntityId: '',
+        secondarySource: 'location',
+        secondaryLocation: null,
       };
     case 'ha-agenda':
       return {
@@ -220,6 +226,7 @@ export function createWidget(type: WidgetType, id: string = newId()): Widget {
         location: '',
         latitude: null,
         longitude: null,
+        temperatureEntityId: '',
         width: 3,
         height: 4,
       };

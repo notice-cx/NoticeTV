@@ -24,7 +24,8 @@ import { Video } from './Video';
 import { themeStyle } from './theme';
 import { EntityWidget, useHomeAssistantData } from './HomeAssistant';
 import type { HomeAssistantData } from '../shared/home-assistant';
-import { isRichWidget } from '../shared/rich-widgets';
+import { isRichWidget, widgetEntityIds } from '../shared/rich-widgets';
+import { numeric, temperatureValue } from '../shared/ha-data';
 import { RichWidgetView } from './RichWidgets';
 
 export function useNow(interval = 1000) {
@@ -56,7 +57,7 @@ export function Dashboard({
   const now = useNow();
   const homeAssistant = useHomeAssistantData(
     dashboard.widgets.flatMap((widget) =>
-      widget.type === 'entity' && widget.entityId ? [widget.entityId] : [],
+      widget.type === 'entity' || widget.type === 'weather' ? widgetEntityIds(widget) : [],
     ),
     demo,
   );
@@ -191,7 +192,15 @@ function WidgetContent({
         />
       );
     case 'weather':
-      return <WeatherWidget widget={widget} dashboard={dashboard} demo={demo} />;
+      return (
+        <WeatherWidget
+          widget={widget}
+          dashboard={dashboard}
+          demo={demo}
+          homeAssistant={homeAssistant}
+          homeAssistantOffline={homeAssistantOffline}
+        />
+      );
     case 'agenda':
       return <AgendaWidget widget={widget} dashboard={dashboard} now={now} />;
     case 'video':
@@ -290,10 +299,14 @@ function WeatherWidget({
   widget,
   dashboard,
   demo,
+  homeAssistant,
+  homeAssistantOffline,
 }: {
   widget: WidgetOf<'weather'>;
   dashboard: DashboardData;
   demo: boolean;
+  homeAssistant: HomeAssistantData;
+  homeAssistantOffline: boolean;
 }) {
   const { data, loading, error, updated } = useWeather(
     widget,
@@ -301,6 +314,19 @@ function WeatherWidget({
     dashboard.timeZone,
     demo,
   );
+  const sensor = homeAssistant.entities[widget.temperatureEntityId];
+  const temperature = widget.temperatureEntityId
+    ? temperatureValue(numeric(sensor?.state), sensor?.unit || null, dashboard.units)
+    : (data?.current.temperature_2m ?? null);
+  const staleSensor = homeAssistantOffline || homeAssistant.phase !== 'connected';
+  const sensorUpdated =
+    sensor?.lastUpdated && Number.isFinite(Date.parse(sensor.lastUpdated))
+      ? new Intl.DateTimeFormat('en', {
+          timeZone: dashboard.timeZone,
+          dateStyle: 'short',
+          timeStyle: 'short',
+        }).format(new Date(sensor.lastUpdated))
+      : null;
   return (
     <div className="weather-widget">
       <div className="widget-heading">
@@ -310,7 +336,7 @@ function WeatherWidget({
           {widget.location || 'Your location'}
         </span>
       </div>
-      {!data ? (
+      {!data && !widget.temperatureEntityId ? (
         <div className="empty-weather">
           <CloudSun size={53} strokeWidth={1} />
           <h3>
@@ -329,52 +355,81 @@ function WeatherWidget({
       ) : (
         <>
           <div className="weather-main">
-            <span className="temperature">
-              {Math.round(data.current.temperature_2m)}
-              <sup>°</sup>
+            <span className="temperature" aria-label="Current temperature">
+              {temperature === null ? '—' : Math.round(temperature)}
+              {temperature !== null && <sup>°</sup>}
             </span>
-            <span className="weather-main-icon">
-              <WeatherIcon code={data.current.weather_code} size={64} />
-            </span>
+            {data && (
+              <span className="weather-main-icon">
+                <WeatherIcon code={data.current.weather_code} size={64} />
+              </span>
+            )}
           </div>
-          <p className="weather-condition">{condition(data.current.weather_code)}</p>
-          <div className="weather-details">
-            <span>
-              <Droplets size={12} />
-              {data.current.relative_humidity_2m}%
-            </span>
-            <span>
-              <Wind size={13} />
-              {Math.round(data.current.wind_speed_10m)}{' '}
-              {dashboard.units === 'fahrenheit' ? 'mph' : 'km/h'}
-            </span>
-          </div>
-          <div className="forecast">
-            {data.daily.time.slice(0, 5).map((date, index) => (
-              <div className="forecast-day" key={date}>
+          {widget.temperatureEntityId && (
+            <p
+              className={`weather-temperature-source ${temperature === null || staleSensor ? 'stale' : ''}`}
+            >
+              {temperature === null
+                ? 'HA temperature unavailable'
+                : staleSensor
+                  ? 'Last known reading'
+                  : `${sensor?.name} · Home Assistant`}
+              {sensorUpdated && (temperature === null || staleSensor) && (
+                <small>Updated {sensorUpdated}</small>
+              )}
+            </p>
+          )}
+          {data ? (
+            <>
+              <p className="weather-condition">{condition(data.current.weather_code)}</p>
+              <div className="weather-details">
                 <span>
-                  {index === 0
-                    ? 'Today'
-                    : new Intl.DateTimeFormat('en', { weekday: 'short', timeZone: 'UTC' }).format(
-                        new Date(`${date}T12:00:00Z`),
-                      )}
+                  <Droplets size={12} />
+                  {data.current.relative_humidity_2m}%
                 </span>
-                <WeatherIcon code={data.daily.weather_code[index]} size={17} />
-                <span className="forecast-low">
-                  {Math.round(data.daily.temperature_2m_min[index])}°
+                <span>
+                  <Wind size={13} />
+                  {Math.round(data.current.wind_speed_10m)}{' '}
+                  {dashboard.units === 'fahrenheit' ? 'mph' : 'km/h'}
                 </span>
-                <div className="forecast-track">
-                  <i
-                    style={{
-                      left: `${((data.daily.temperature_2m_min[index] - Math.min(...data.daily.temperature_2m_min)) / Math.max(1, Math.max(...data.daily.temperature_2m_max) - Math.min(...data.daily.temperature_2m_min))) * 100}%`,
-                      width: `${Math.max(2, ((data.daily.temperature_2m_max[index] - data.daily.temperature_2m_min[index]) / Math.max(1, Math.max(...data.daily.temperature_2m_max) - Math.min(...data.daily.temperature_2m_min))) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span>{Math.round(data.daily.temperature_2m_max[index])}°</span>
               </div>
-            ))}
-          </div>
+              <div className="forecast">
+                {data.daily.time.slice(0, 5).map((date, index) => (
+                  <div className="forecast-day" key={date}>
+                    <span>
+                      {index === 0
+                        ? 'Today'
+                        : new Intl.DateTimeFormat('en', {
+                            weekday: 'short',
+                            timeZone: 'UTC',
+                          }).format(new Date(`${date}T12:00:00Z`))}
+                    </span>
+                    <WeatherIcon code={data.daily.weather_code[index]} size={17} />
+                    <span className="forecast-low">
+                      {Math.round(data.daily.temperature_2m_min[index])}°
+                    </span>
+                    <div className="forecast-track">
+                      <i
+                        style={{
+                          left: `${((data.daily.temperature_2m_min[index] - Math.min(...data.daily.temperature_2m_min)) / Math.max(1, Math.max(...data.daily.temperature_2m_max) - Math.min(...data.daily.temperature_2m_min))) * 100}%`,
+                          width: `${Math.max(2, ((data.daily.temperature_2m_max[index] - data.daily.temperature_2m_min[index]) / Math.max(1, Math.max(...data.daily.temperature_2m_max) - Math.min(...data.daily.temperature_2m_min))) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <span>{Math.round(data.daily.temperature_2m_max[index])}°</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="weather-condition">
+              {loading
+                ? 'Loading forecast…'
+                : error
+                  ? 'Forecast unavailable.'
+                  : 'Choose a location for conditions and forecasts.'}
+            </p>
+          )}
         </>
       )}
       <div className={`weather-credit ${error ? 'stale' : ''}`}>
@@ -386,7 +441,8 @@ function WeatherWidget({
           `Last update ${new Date(updated).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
         ) : (
           <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">
-            Weather by Open-Meteo <ArrowUpRight size={10} />
+            {widget.temperatureEntityId ? 'Forecasts' : 'Weather'} by Open-Meteo{' '}
+            <ArrowUpRight size={10} />
           </a>
         )}
       </div>

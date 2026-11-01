@@ -208,62 +208,75 @@ describe('Home Assistant access from editor and paired screens', () => {
     return { store, request };
   }
 
-  it('lets only editors configure and discover entities; screens can read only published selections', async () => {
-    const { store, request } = await start();
-    for (const path of [
-      '/home-assistant',
-      '/home-assistant/entities',
-      `/home-assistant/data?entities=${selected}`,
-    ])
-      expect((await request(path, null)).status).toBe(401);
-    for (const path of ['/home-assistant', '/home-assistant/entities'])
-      expect((await request(path, 'display')).status).toBe(403);
-    expect(
-      (
-        await request('/home-assistant', 'display', 'PUT', {
-          url: fixture.url,
-          token: fixtureToken,
-        })
-      ).status,
-    ).toBe(403);
-    expect((await request('/home-assistant', 'display', 'DELETE', {})).status).toBe(403);
-    const saved = await request('/home-assistant', 'editor', 'PUT', {
-      url: fixture.url,
-      token: fixtureToken,
-    });
-    expect(saved.status).toBe(200);
-    expect(await saved.text()).not.toContain(fixtureToken);
-    const board = {
-      ...createDashboard(),
-      widgets: [{ ...createWidget('entity'), entityId: selected }],
-    };
-    await store.save(board, 0, false);
-    expect((await request(`/home-assistant/data?entities=${selected}`, 'display')).status).toBe(
-      403,
-    );
-    expect((await request(`/home-assistant/data?entities=${selected}`, 'editor')).status).toBe(200);
-    await store.save(board, 1, true);
-    const data = await (
-      await request(`/home-assistant/data?entities=${selected}`, 'display')
-    ).json();
-    expect(Object.keys(data.entities)).toEqual([selected]);
-    expect(JSON.stringify(data)).not.toContain(fixtureAttributeSecret);
-    expect(JSON.stringify(data)).not.toContain(fixtureToken);
-    expect(JSON.stringify(data)).not.toContain(fixture.url);
-    expect(
-      (await request('/home-assistant/data?entities=sensor.private_value', 'display')).status,
-    ).toBe(403);
-    expect((await request('/home-assistant/data?entities=/api/services', 'editor')).status).toBe(
-      400,
-    );
-    expect(
-      (await request('/home-assistant/data?entities=sensor.valid&entities=sensor.other', 'editor'))
-        .status,
-    ).toBe(400);
-    const document = await (await request('/document', 'editor')).text();
-    expect(document).not.toContain(fixtureToken);
-    expect(document).not.toContain(fixture.url);
-    const actions = new Set(fixture.messages.map((message) => message.type));
-    expect([...actions]).toEqual(['auth', 'subscribe_events', 'get_states']);
-  });
+  it.each(['entity', 'weather'] as const)(
+    'scopes %s sensor readings to the published dashboard',
+    async (type) => {
+      const { store, request } = await start();
+      for (const path of [
+        '/home-assistant',
+        '/home-assistant/entities',
+        `/home-assistant/data?entities=${selected}`,
+      ])
+        expect((await request(path, null)).status).toBe(401);
+      for (const path of ['/home-assistant', '/home-assistant/entities'])
+        expect((await request(path, 'display')).status).toBe(403);
+      expect(
+        (
+          await request('/home-assistant', 'display', 'PUT', {
+            url: fixture.url,
+            token: fixtureToken,
+          })
+        ).status,
+      ).toBe(403);
+      expect((await request('/home-assistant', 'display', 'DELETE', {})).status).toBe(403);
+      const saved = await request('/home-assistant', 'editor', 'PUT', {
+        url: fixture.url,
+        token: fixtureToken,
+      });
+      expect(saved.status).toBe(200);
+      expect(await saved.text()).not.toContain(fixtureToken);
+      const board = {
+        ...createDashboard(),
+        widgets: [
+          type === 'weather'
+            ? { ...createWidget('weather'), temperatureEntityId: selected }
+            : { ...createWidget('entity'), entityId: selected },
+        ],
+      };
+      await store.save(board, 0, false);
+      expect((await request(`/home-assistant/data?entities=${selected}`, 'display')).status).toBe(
+        403,
+      );
+      expect((await request(`/home-assistant/data?entities=${selected}`, 'editor')).status).toBe(
+        200,
+      );
+      await store.save(board, 1, true);
+      const data = await (
+        await request(`/home-assistant/data?entities=${selected}`, 'display')
+      ).json();
+      expect(Object.keys(data.entities)).toEqual([selected]);
+      expect(JSON.stringify(data)).not.toContain(fixtureAttributeSecret);
+      expect(JSON.stringify(data)).not.toContain(fixtureToken);
+      expect(JSON.stringify(data)).not.toContain(fixture.url);
+      expect(
+        (await request('/home-assistant/data?entities=sensor.private_value', 'display')).status,
+      ).toBe(403);
+      expect((await request('/home-assistant/data?entities=/api/services', 'editor')).status).toBe(
+        400,
+      );
+      expect(
+        (
+          await request(
+            '/home-assistant/data?entities=sensor.valid&entities=sensor.other',
+            'editor',
+          )
+        ).status,
+      ).toBe(400);
+      const document = await (await request('/document', 'editor')).text();
+      expect(document).not.toContain(fixtureToken);
+      expect(document).not.toContain(fixture.url);
+      const actions = new Set(fixture.messages.map((message) => message.type));
+      expect([...actions]).toEqual(['auth', 'subscribe_events', 'get_states']);
+    },
+  );
 });

@@ -21,7 +21,7 @@ and preview the whole screen before publishing. Export a layout to keep it or sh
 
 | Widget          | What it brings to the screen                                                                                                             |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **Weather**     | Current conditions and a five-day forecast from [Open-Meteo](https://open-meteo.com/), with city search and Celsius/Fahrenheit settings. |
+| **Weather**     | [Open-Meteo](https://open-meteo.com/) conditions and a five-day forecast, with city search, Celsius/Fahrenheit settings, and an HA sensor option for the current temperature. |
 | **Home Assistant** | Live sensor readings and entity status through one shared connection, with searchable entity selection and outage indicators. |
 | **Home weather** | HA forecasts and outdoor sensors, humidity, US AQI, a second location, sun times, and moon phases. |
 | **Connected calendar** | HA calendars, week/month views, source colors and filters, event details, and meeting reminders. |

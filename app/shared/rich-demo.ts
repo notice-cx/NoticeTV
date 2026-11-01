@@ -16,6 +16,7 @@ export function createHomePreview(cameras = false): Dashboard {
     aqiEntityId: 'sensor.demo_aqi',
     sunEntityId: 'sun.sun',
     secondaryEntityId: 'weather.demo_city',
+    secondarySource: 'home-assistant' as const,
   };
   const agenda = {
     ...createWidget('ha-agenda', 'demo-home-agenda'),

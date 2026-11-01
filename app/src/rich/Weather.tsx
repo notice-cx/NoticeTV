@@ -12,10 +12,12 @@ import {
   Sunset,
   Wind,
 } from 'lucide-react';
-import type { Dashboard } from '../../shared/dashboard';
+import type { Dashboard, WidgetOf } from '../../shared/dashboard';
 import type { RichWidgetData, WeatherPlace } from '../../shared/rich-widgets';
+import { secondaryWeatherSource } from '../../shared/rich-widgets';
 import { dateKey } from '../../shared/ha-data';
 import { number } from './ui';
+import { forecastPlace, useWeather } from '../use-weather';
 
 const conditionName = (value: string) =>
   ({
@@ -68,10 +70,14 @@ export function HomeWeather({
   value,
   board,
   now,
+  widget,
+  demo,
 }: {
   value: Extract<RichWidgetData, { type: 'ha-weather' }>['data'];
   board: Dashboard;
   now: Date;
+  widget: WidgetOf<'ha-weather'>;
+  demo: boolean;
 }) {
   const weather = value.current;
   const formatTime = (date: string | null) =>
@@ -135,7 +141,17 @@ export function HomeWeather({
           <p className="rich-unavailable">Forecast unavailable</p>
         )}
       </div>
-      {value.secondary && <CityStrip weather={value.secondary} today={today} dayName={dayName} />}
+      {secondaryWeatherSource(widget) === 'home-assistant' && value.secondary && (
+        <CityStrip weather={value.secondary} today={today} dayName={dayName} />
+      )}
+      {secondaryWeatherSource(widget) === 'location' && widget.secondaryLocation && (
+        <LocationWeather
+          location={widget.secondaryLocation}
+          board={board}
+          demo={demo}
+          dayName={dayName}
+        />
+      )}
       <div className="home-sun-times">
         <div>
           <Sunset size={18} />
@@ -167,6 +183,52 @@ export function HomeWeather({
         </div>
       </div>
       {weather?.attribution && <p className="rich-attribution">{weather.attribution}</p>}
+    </div>
+  );
+}
+function LocationWeather({
+  location,
+  board,
+  demo,
+  dayName,
+}: {
+  location: NonNullable<WidgetOf<'ha-weather'>['secondaryLocation']>;
+  board: Dashboard;
+  demo: boolean;
+  dayName: (day: string) => string;
+}) {
+  const { data, loading, error, updated } = useWeather(location, board.units, 'auto', demo, 6);
+  return (
+    <div>
+      {data ? (
+        <CityStrip
+          weather={forecastPlace(data, location.location, board.units)}
+          today={data.daily.time[0]}
+          dayName={dayName}
+        />
+      ) : (
+        <section className="home-city-strip" aria-label={`${location.location} weather`}>
+          <div className="home-city-label">{location.location}</div>
+          <p className="rich-unavailable">
+            {loading ? 'Loading forecast…' : 'Weather unavailable'}
+          </p>
+        </section>
+      )}
+      {error && (
+        <p className="rich-warning">
+          {updated
+            ? `Last update ${new Intl.DateTimeFormat('en', { timeZone: board.timeZone, dateStyle: 'short', timeStyle: 'short' }).format(new Date(updated))}`
+            : 'Second location weather unavailable · retrying'}
+        </p>
+      )}
+      <a
+        className="rich-attribution"
+        href="https://open-meteo.com/"
+        target="_blank"
+        rel="noreferrer"
+      >
+        {demo ? 'Fictional preview · ' : ''}Weather by Open-Meteo
+      </a>
     </div>
   );
 }

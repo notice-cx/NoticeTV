@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { Plus, RefreshCw, X } from 'lucide-react';
 import type { HomeAssistantEntity } from '../shared/home-assistant';
 import type { RichWidget } from '../shared/rich-widgets';
+import { secondaryWeatherSource } from '../shared/rich-widgets';
+import type { WidgetOf } from '../shared/dashboard';
 import { api, errorMessage } from './api';
 import { Field } from './Field';
+import { LocationSearch } from './LocationSearch';
 
 function Picker({
   label,
@@ -12,6 +15,7 @@ function Picker({
   entities,
   domains,
   hint,
+  emptyLabel = 'Choose an entity',
 }: {
   label: string;
   value: string;
@@ -19,6 +23,7 @@ function Picker({
   entities: HomeAssistantEntity[];
   domains: string[];
   hint?: string;
+  emptyLabel?: string;
 }) {
   const choices = entities.filter((entity) =>
     domains.some((domain) => entity.id.startsWith(`${domain}.`)),
@@ -26,7 +31,7 @@ function Picker({
   return (
     <Field label={label} hint={hint}>
       <select value={value} onChange={(event) => change(event.target.value)}>
-        <option value="">Choose an entity</option>
+        <option value="">{emptyLabel}</option>
         {value && !choices.some((entity) => entity.id === value) && (
           <option value={value}>{value}</option>
         )}
@@ -72,8 +77,8 @@ export function RichInspector({
   demo,
   openSources,
 }: {
-  widget: RichWidget;
-  change: (value: RichWidget) => void;
+  widget: RichWidget | WidgetOf<'weather'>;
+  change: (value: RichWidget | WidgetOf<'weather'>) => void;
   demo: boolean;
   openSources: () => void;
 }) {
@@ -123,7 +128,13 @@ export function RichInspector({
   return (
     <div className="rich-inspector">
       <div className="source-note">
-        <p>Every reading comes through your shared Home Assistant connection.</p>
+        <p>
+          {widget.type === 'weather'
+            ? 'Use a Home Assistant sensor for the current temperature. Conditions and forecasts stay with Open-Meteo.'
+            : widget.type === 'ha-weather'
+              ? 'Home Assistant supplies your home readings. Use a location search or another HA weather entity for the second location.'
+              : 'Every reading comes through your shared Home Assistant connection.'}
+        </p>
         <button className="text-button" onClick={openSources}>
           Open Sources
         </button>
@@ -156,6 +167,17 @@ export function RichInspector({
         <p className="ha-error" role="alert">
           {error}
         </p>
+      )}
+      {widget.type === 'weather' && (
+        <Picker
+          label="Current temperature sensor"
+          value={widget.temperatureEntityId}
+          entities={visible}
+          domains={['sensor']}
+          change={(temperatureEntityId) => change({ ...widget, temperatureEntityId })}
+          emptyLabel="Use Open-Meteo temperature"
+          hint="Choose a sensor reporting °C, °F, or K. It follows the dashboard’s temperature units."
+        />
       )}
       {widget.type === 'ha-weather' && (
         <>
@@ -190,17 +212,53 @@ export function RichInspector({
             (sunEntityId) => change({ ...widget, sunEntityId }),
             'Sun times also use HA’s location; moon phase is calculated locally.',
           )}
-          {pick(
-            'Second location weather',
-            widget.secondaryEntityId,
-            ['weather'],
-            (secondaryEntityId) => change({ ...widget, secondaryEntityId }),
-            'A current reading and five future days from another HA weather entity.',
+          <Field label="Second location source">
+            <select
+              value={secondaryWeatherSource(widget)}
+              onChange={(event) =>
+                change({
+                  ...widget,
+                  secondarySource: event.target.value as typeof widget.secondarySource,
+                })
+              }
+            >
+              <option value="location">Search for a location</option>
+              <option value="home-assistant">Home Assistant weather entity</option>
+              <option value="off">Off</option>
+            </select>
+          </Field>
+          {secondaryWeatherSource(widget) === 'location' && (
+            <>
+              <LocationSearch
+                key={widget.id}
+                label="Second location"
+                searchLabel="Search second location"
+                value={widget.secondaryLocation}
+                change={(secondaryLocation) => change({ ...widget, secondaryLocation })}
+                clear={() => change({ ...widget, secondaryLocation: null })}
+              />
+              <p className="field-hint">
+                Current conditions and five future days from Open-Meteo. This location uses its
+                local forecast dates and the dashboard’s temperature units.
+              </p>
+            </>
           )}
+          {secondaryWeatherSource(widget) === 'home-assistant' &&
+            pick(
+              'Second location weather',
+              widget.secondaryEntityId,
+              ['weather'],
+              (secondaryEntityId) => change({ ...widget, secondaryEntityId }),
+              'A current reading and five future days from another HA weather entity.',
+            )}
         </>
       )}
       {widget.type === 'ha-agenda' && (
         <>
+          <p className="field-hint">
+            Choose up to eight calendars with Add calendar. Their events appear together in the
+            widget.
+          </p>
           {pick('Add calendar', '', ['calendar'], (entityId) => {
             if (
               !entityId ||

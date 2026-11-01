@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Dashboard } from '../shared/dashboard';
-import { widgetEntityIds, type RichWidget, type RichWidgetData } from '../shared/rich-widgets';
+import {
+  secondaryWeatherSource,
+  widgetEntityIds,
+  type RichWidget,
+  type RichWidgetData,
+} from '../shared/rich-widgets';
 import { richPreview } from '../shared/rich-demo';
 import { api, errorMessage } from './api';
 
@@ -23,7 +28,11 @@ export function useRichWidget(
     () => (demo ? richPreview(widget, new Date(), board.units) : null),
     [demo, key],
   );
-  const configured = widgetEntityIds(widget).length > 0;
+  const configured =
+    widgetEntityIds(widget).length > 0 ||
+    (widget.type === 'ha-weather' &&
+      secondaryWeatherSource(widget) === 'location' &&
+      !!widget.secondaryLocation);
   useEffect(() => {
     if (demo || !configured) return;
     let retired = false,

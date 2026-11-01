@@ -148,6 +148,7 @@ test('rich widgets use configured HA sources and publish data and snapshots to a
       .getByRole('combobox', { name: /^Air quality index/ })
       .selectOption('sensor.demo_aqi');
     await page.getByRole('combobox', { name: /^Sun entity/ }).selectOption('sun.sun');
+    await page.getByLabel('Second location source').selectOption('home-assistant');
     await page
       .getByRole('combobox', { name: /^Second location weather/ })
       .selectOption('weather.demo_city');

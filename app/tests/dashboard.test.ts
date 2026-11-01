@@ -7,6 +7,7 @@ import {
   layoutWidgets,
 } from '../shared/dashboard';
 import { themeIds } from '../shared/themes';
+import { secondaryWeatherSource, widgetEntityIds } from '../shared/rich-widgets';
 
 describe('portable dashboard documents', () => {
   it('starts with an empty, usable dashboard without personal settings or invented live readings', () => {
@@ -32,6 +33,54 @@ describe('portable dashboard documents', () => {
     expect(dashboardSchema.safeParse({ ...createDashboard(), theme: 'unknown' }).success).toBe(
       false,
     );
+  });
+
+  it('keeps weather sensor selections portable and accepts layouts saved before the selector existed', () => {
+    const weather = createWidget('weather');
+    const parse = (temperatureEntityId: unknown) =>
+      dashboardSchema.safeParse({
+        ...createDashboard(),
+        widgets: [{ ...weather, temperatureEntityId }],
+      });
+    const legacy = parse(undefined);
+    expect(legacy.success && legacy.data.widgets[0]).toMatchObject({ temperatureEntityId: '' });
+    const selected = parse('sensor.outdoor_temperature');
+    expect(selected.success && selected.data.widgets[0]).toMatchObject({
+      temperatureEntityId: 'sensor.outdoor_temperature',
+    });
+    for (const id of ['weather.home', 'binary_sensor.front_door', 'sensor.invalid/path'])
+      expect(parse(id).success).toBe(false);
+  });
+
+  it('preserves older second-location entities and validates portable city selections', () => {
+    const weather = createWidget('ha-weather');
+    const old = {
+      ...weather,
+      secondarySource: undefined,
+      secondaryLocation: undefined,
+      secondaryEntityId: 'weather.other',
+    };
+    const board = dashboardSchema.parse({ ...createDashboard(), widgets: [old] });
+    const saved = board.widgets[0];
+    if (saved.type !== 'ha-weather') throw new Error('Expected home weather');
+    expect(secondaryWeatherSource(saved)).toBe('home-assistant');
+    expect(saved.secondaryLocation).toBeNull();
+    expect(widgetEntityIds(saved)).toContain('weather.other');
+    const location = { location: 'Fixture city', latitude: 0, longitude: 0 };
+    for (const source of ['location', 'off'] as const) {
+      const selected = { ...saved, secondarySource: source, secondaryLocation: location };
+      expect(widgetEntityIds(selected)).not.toContain('weather.other');
+      expect(dashboardSchema.parse({ ...board, widgets: [selected] }).widgets[0]).toEqual(selected);
+    }
+    for (const invalid of [
+      { ...location, latitude: 91 },
+      { ...location, longitude: -181 },
+      { ...location, location: '' },
+    ])
+      expect(
+        dashboardSchema.safeParse({ ...board, widgets: [{ ...saved, secondaryLocation: invalid }] })
+          .success,
+      ).toBe(false);
   });
 
   it('rejects executable URLs, embedded credentials, duplicate widgets, and impossible dates', () => {
