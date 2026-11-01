@@ -1,4 +1,6 @@
-# Local media fixture
+# Local fixtures
+
+## Media
 
 `hls/` is a six-second H.264 test pattern generated with FFmpeg's `testsrc2` filter.
 It contains no footage, audio, private data, or third-party stream. Its only consumer is the
@@ -11,3 +13,10 @@ ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc2=size=320x180:rate=24 -t
 Tests serve these files from the loopback test origin. They never request a broadcaster,
 Home Assistant installation, or other live service. Weather and geocoding responses are fixtures;
 all other external browser requests are blocked.
+
+## Home Assistant
+
+`home-assistant.ts` starts a synthetic Home Assistant WebSocket server on an ephemeral loopback
+port. Its account token, entities, readings, and private attribute markers are fictional. Unit
+and browser tests use it for authentication, state updates, outages, removals, and permission
+checks. It never connects to a real Home Assistant installation or external service.

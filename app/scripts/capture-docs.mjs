@@ -122,9 +122,70 @@ try {
     .click();
   await expect(page.getByLabel('Pairing code')).toContainText(/\d{6}/);
   await shot(page.getByRole('dialog'), 'noticetv-pairing.png');
+  await page.getByRole('button', { name: 'Close dialog' }).click();
+  // HA screenshots use explicit local response fixtures; this server never has HA credentials.
+  const entity = {
+    id: 'sensor.living_room_temperature',
+    name: 'Living room temperature',
+    state: '21.5',
+    unit: '°C',
+    deviceClass: 'temperature',
+    lastUpdated: captureTime.toISOString(),
+  };
+  await page.route(`${origin}/api/home-assistant`, (route) => {
+    assert.equal(
+      route.request().method(),
+      'GET',
+      'Captures must not configure a real HA connection.',
+    );
+    return route.fulfill({
+      json: {
+        url: 'http://homeassistant.local:8123',
+        phase: 'connected',
+        entityCount: 1,
+        receivedAt: captureTime.toISOString(),
+      },
+    });
+  });
+  await page.route(`${origin}/api/home-assistant/entities`, (route) =>
+    route.fulfill({ json: { entities: [entity] } }),
+  );
+  await page.route(`${origin}/api/home-assistant/data?*`, (route) =>
+    route.fulfill({
+      json: {
+        phase: 'connected',
+        receivedAt: captureTime.toISOString(),
+        entities: { [entity.id]: entity },
+      },
+    }),
+  );
+  await page.getByLabel('Dashboard title').fill('Home Assistant preview');
+  await page.getByLabel('Subtitle').fill('Fictional readings · Your dashboard, connected.');
+  await page.getByRole('button', { name: 'Edit A little reminder', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove widget', exact: true }).click();
+  await page.getByRole('button', { name: 'Add widget', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /^Home Assistant Live sensors/ })
+    .click();
+  await page.getByLabel('Home Assistant entity').selectOption(entity.id);
+  await page.getByLabel('Widget title').fill('Room temperature');
+  await page.getByRole('combobox', { name: 'Height', exact: true }).selectOption('2');
+  await expect(page.locator('.entity-value')).toContainText('21.5');
+  await shot(page, 'noticetv-home-assistant-widget.png');
+  await page.getByRole('button', { name: 'Data sources', exact: true }).click();
+  await expect(page.locator('.ha-connection-status')).toContainText('Connected');
+  await shot(page, 'noticetv-home-assistant.png');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: resolve(images, 'noticetv-home-assistant-phone.png'),
+    fullPage: true,
+    animations: 'disabled',
+    scale: 'css',
+  });
   assert.deepEqual(errors, [], 'Captures must not contain application errors.');
   assert.deepEqual(blocked, [], 'Documentation captures must not request external services.');
-  console.log(`Captured ten documentation screenshots in docs/images using fictional data.`);
+  console.log(`Captured thirteen documentation screenshots in docs/images using fictional data.`);
 } finally {
   await browser?.close();
   if (server.exitCode === null && server.signalCode === null) {

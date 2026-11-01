@@ -7,6 +7,7 @@ import { createDashboard } from '../shared/dashboard';
 import { createApp } from '../server/app';
 import { readSession, sessionCookie } from '../server/auth';
 import { DashboardStore, RevisionConflict } from '../server/store';
+import { HomeAssistantConnection } from '../server/home-assistant';
 
 const key = 'noticetv-unit-test-editor-fixture';
 let directory: string;
@@ -63,7 +64,8 @@ describe('editor and screen permissions', () => {
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve));
     const port = (server.address() as { port: number }).port;
     const origin = `http://127.0.0.1:${port}`;
-    server.on('request', createApp({ store, editorKey: key, origin }));
+    const homeAssistant = await new HomeAssistantConnection(directory).initialize();
+    server.on('request', createApp({ store, editorKey: key, origin, homeAssistant }));
     async function request(
       path: string,
       method = 'GET',

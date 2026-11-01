@@ -17,10 +17,13 @@ The capture script starts its own loopback server with a temporary data director
 It captures the actual editor, display preview, five themes, widget collection, phone editor,
 and pairing dialog. The date is fixed, the agenda and weather are fictional, and the video tile
 is the app's original illustration. The pairing dialog uses a fixed example code and expiry.
+The three Home Assistant captures use explicit local response fixtures for connection status,
+entity discovery, and a temperature reading. Their dashboard is labeled as a fictional preview;
+the capture server never receives HA credentials or contacts an HA installation.
 Every external browser request is blocked. The browser,
 server, and temporary data are removed when capture finishes.
 
-The script writes ten PNGs into this directory. Review them after interface changes, then commit
+The script writes thirteen PNGs into this directory. Review them after interface changes, then commit
 the updated images alongside the relevant documentation. The screenshots contain no data from a
 real installation. `NOTICETV_DOCS_PORT` selects another local port if the default, 3002, is busy.
 
