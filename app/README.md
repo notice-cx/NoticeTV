@@ -129,7 +129,8 @@ source addresses and event content; they are configuration backups.
 ## Sources and playback
 
 - **Home Assistant:** one server-side connection supplies live entity states to Home Assistant
-  widgets. Setup, entity selection, permissions, and outage behavior are described below.
+  widgets and the richer weather, calendar, climate, readiness, status, and camera cards. Setup,
+  entity selection, permissions, and outage behavior are described below.
 - **Weather:** city search uses Open-Meteo geocoding. Forecasts load directly from Open-Meteo on
   each screen every fifteen minutes while visible, and on reconnection. The configured approximate
   city coordinates are sent to Open-Meteo. Attribution is shown. Consult
@@ -148,13 +149,14 @@ source addresses and event content; they are configuration backups.
 The TV view scales a 1600×900 canvas to fit its viewport without clipping. Widget widths use a
 twelve-column grid. Taller layouts fit into the same canvas; preview before publishing.
 Screens retain the running layout during server outages and retry every ten seconds. A cold start
-still requires the server. HA-backed calendar, forecast, history, and authenticated camera/video
-widgets are not implemented yet. The OS image does not automatically install the app.
+still requires the server. Live WebRTC/go2rtc playback and HA device controls are not implemented.
+The OS image does not automatically install the app.
 
 ### Home Assistant
 
-Home Assistant owns your devices and third-party integrations. NoticeTV reads their entity
-states through one shared connection; each screen connects only to NoticeTV for this data.
+Home Assistant owns your devices and third-party integrations. NoticeTV reads their states,
+forecasts, calendars, recorder history, and camera snapshots through one shared connection;
+each screen connects only to NoticeTV for this data.
 
 1. In Home Assistant, create a **long-lived access token** in your account profile.
    Use an account with access to the entities you want to display.
@@ -192,7 +194,9 @@ for all screens without deleting widget selections.
 Only editors can change the connection or browse entities. Paired screens can request only
 entities used by the **published** dashboard, never selections that exist only in a draft.
 Responses contain the selected state, name, unit, device class, and update time. Raw entity
-attributes, camera tokens, private URLs, and HA credentials are not forwarded. Layout exports
+attribute objects, camera tokens, private endpoint URLs, and HA credentials are not forwarded. Rich widgets expose
+only the fields they render; published calendars include event details and locations, and a
+published camera makes its snapshots available to paired screens. Layout exports
 include entity IDs; importing a layout requires setting up its HA connection on the destination
 server.
 
@@ -200,27 +204,73 @@ If Docker cannot resolve `homeassistant.local`, use an address that resolves ins
 HTTPS connections use normal certificate validation; configure a trusted certificate rather than
 disabling verification.
 
+### Rich Home widgets
+
+Choose **Add widget → Use Home layout** to preview the five-card preset, then **Replace draft
+layout**. The action replaces the draft's widgets; publication remains a separate step. All source
+choices start empty. Configure your dashboard's time zone and temperature units, then choose the
+HA entities in each widget. The connection itself stays in Sources.
+
+| Widget                 | Sources and behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Home weather**       | Choose a `weather` entity for conditions and daily forecasts. HA hourly or twice-daily forecasts are grouped into local days. Selected outdoor temperature/humidity sensors override the weather entity's current values when available. US AQI uses a selected sensor. A second HA weather entity supplies another location's current conditions and five future days. Sun times use HA's home location and selected sun entity; moon phases are calculated locally with SunCalc. |
+| **Connected calendar** | Select up to eight HA calendars, their names/colors, and which should produce meeting reminders. Reminders cover the next three hours and exclude all-day events and calendars named as TV schedules. Filters cover finished/declined/duplicate/multi-day events and comma-separated hidden-title phrases. All-day end dates are exclusive and respect the dashboard time zone across daylight-saving changes.                                                                     |
+| **Indoor climate**     | Select up to two temperature sensors or thermostat entities, plus a CO₂ sensor. Thermostats use measured `current_temperature`, rather than their target setting. The charts show 24 hours of recorder history, including attribute-only changes. The second temperature has a dashed line; unavailable readings leave gaps.                                                                                                                                                       |
+| **Readiness**          | Select a 0–100 score entity. The card shows the current score, seven-day recorder trend, and average of available recorded readings. Missing or out-of-range scores show unavailable. No Oura account or provider credentials are needed in NoticeTV.                                                                                                                                                                                                                              |
+| **Home status**        | Select up to twelve binary contact sensors (`on` means open) and a motion sensor. Unavailable or missing contacts are counted separately and never reported as closed.                                                                                                                                                                                                                                                                                                             |
+| **Camera**             | Select an HA camera and a motion sensor. Authenticated snapshots refresh every 20 seconds while visible. The update time records when NoticeTV fetched the image; it does not establish the camera frame's original capture time. This is a snapshot widget, separate from the anonymous HLS stream widget.                                                                                                                                                                        |
+
+Temperature readings and histories support HA's Celsius, Fahrenheit, and Kelvin units, displayed
+in the dashboard's Celsius/Fahrenheit preference. Unknown temperature units remain unavailable.
+CO₂ values retain their HA units; threshold colors apply only to ppm readings.
+
+Rich data refreshes on visible screens every five seconds. Forecasts are shared and cached for
+fifteen minutes; calendar and recorder requests for five minutes; snapshots for twenty seconds.
+Failed reads retain available cached data with an interruption warning and last-update time.
+Failures retry after a thirty-second backoff. Requests have ten-second timeouts and an eight-MiB
+REST response limit. Snapshots accept JPEG, PNG, and WebP, and authenticated requests never follow
+redirects. Source caches are cleared when the connection changes or is disconnected.
+
+The default TV view is passive. Enable **Allow display interactions** in dashboard settings,
+then publish to allow calendar view changes, day selection, event details, and enlarged snapshots.
+These interactions do not edit the dashboard or control HA devices. Enlarging a snapshot reuses
+its existing image and refresh cycle, and shows the full image. The dense Home preset uses Fill
+for camera thumbnails; choose Fit in camera settings to preserve the full frame within its card.
+
+Try `/demo?home` for the fictional Home layout and `/demo?home&cameras` for contact status and
+camera interaction previews. Their readings and illustrated camera are local demo assets; they
+never contact HA or an external source.
+
+The server's widget endpoints separate unsaved editor previews from display reads. A paired
+screen requests a published widget ID; all entities, calendar ranges, history windows, units,
+and time zones are resolved from the saved publication. Client-provided source overrides cannot
+change a display's selection. The server provides specific read paths, never a general HA proxy.
+
 ## Project structure
 
-| Path                       | Responsibility                                                                     |
-| -------------------------- | ---------------------------------------------------------------------------------- |
-| `shared/dashboard.ts`      | Versioned document schema, defaults, fictional demo, grid placement.               |
-| `server/store.ts`          | Serialized revision checks and atomic file replacement.                            |
-| `server/auth.ts`           | Editor key and signed role-limited cookies.                                        |
-| `server/home-assistant.ts` | Shared HA connection, protected credentials, recovery, and safe entity projection. |
-| `shared/home-assistant.ts` | Connection validation and browser-safe data contracts.                             |
-| `src/HomeAssistant.tsx`    | Connection setup, searchable entity selection, and live state widget.              |
-| `server/app.ts`            | Validated API, pairing, host/origin checks, request limits.                        |
-| `server/index.ts`          | Development middleware or production static serving.                               |
-| `src/App.tsx`              | Session routing to the editor, sign-in, or display.                                |
-| `src/Editor.tsx`           | Draft editing, publishing, pairing, import/export.                                 |
-| `src/Display.tsx`          | Published dashboard synchronization and outage retention.                          |
-| `src/Login.tsx`            | Editor sign-in and display pairing.                                                |
-| `src/ui.tsx`               | Shared dialogs, branding, and scaled display canvas.                               |
-| `src/Inspector.tsx`        | Dashboard and widget settings, location search.                                    |
-| `src/Dashboard.tsx`        | Display layout and widget presentation.                                            |
-| `src/Video.tsx`            | HLS lifecycle, visibility, autoplay, and recovery.                                 |
-| `src/use-weather.ts`       | Bounded public requests and stale-data retention.                                  |
+| Path                       | Responsibility                                                                           |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| `shared/dashboard.ts`      | Versioned document schema, defaults, fictional demo, grid placement.                     |
+| `server/store.ts`          | Serialized revision checks and atomic file replacement.                                  |
+| `server/auth.ts`           | Editor key and signed role-limited cookies.                                              |
+| `server/home-assistant.ts` | Shared HA connection, protected credentials, recovery, and safe entity projection.       |
+| `server/ha-widgets.ts`     | Typed rich-widget reads, shared caches, and source interruption handling.                |
+| `shared/rich-widgets.ts`   | Rich widget schemas, explicit source selections, and safe payload types.                 |
+| `shared/ha-data.ts`        | Calendar dates/filters, forecast grouping, unit conversion, and recorder interpretation. |
+| `src/rich/`                | Weather, calendar, sensor, and camera views with shared read-only dialogs.               |
+| `shared/home-assistant.ts` | Connection validation and browser-safe data contracts.                                   |
+| `src/HomeAssistant.tsx`    | Connection setup, searchable entity selection, and live state widget.                    |
+| `server/app.ts`            | Validated API, pairing, host/origin checks, request limits.                              |
+| `server/index.ts`          | Development middleware or production static serving.                                     |
+| `src/App.tsx`              | Session routing to the editor, sign-in, or display.                                      |
+| `src/Editor.tsx`           | Draft editing, publishing, pairing, import/export.                                       |
+| `src/Display.tsx`          | Published dashboard synchronization and outage retention.                                |
+| `src/Login.tsx`            | Editor sign-in and display pairing.                                                      |
+| `src/ui.tsx`               | Shared dialogs, branding, and scaled display canvas.                                     |
+| `src/Inspector.tsx`        | Dashboard and widget settings, location search.                                          |
+| `src/Dashboard.tsx`        | Display layout and widget presentation.                                                  |
+| `src/Video.tsx`            | HLS lifecycle, visibility, autoplay, and recovery.                                       |
+| `src/use-weather.ts`       | Bounded public requests and stale-data retention.                                        |
 
 Browser and server validate the same document. A malformed existing file stops startup rather
 than silently replacing it. Publication becomes visible in memory only after the file has been

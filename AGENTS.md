@@ -36,6 +36,10 @@ show the NoticeTV dashboard, NoticeOS's Wall, or any URL. The OS image does not 
   `app/server/home-assistant.ts`. Credentials stay in the protected data directory, outside dashboard
   documents. Editors discover entities; displays receive only safe values selected by published
   widgets. Do not add arbitrary HA command forwarding or return raw entity attributes.
+- **Rich HA widgets have typed reads.** `app/server/ha-widgets.ts` owns caching and projections;
+  `app/shared/ha-data.ts` owns calendar and recorder semantics. Display requests resolve sources
+  from a published widget ID. Unsaved preview configuration is editor-only. Snapshot credentials
+  stay server-side; REST redirects are refused. Calendar and recorder windows are bounded by the server.
 - **Dashboard themes use semantic colors.** Palettes live in `app/shared/themes.ts`; widgets use
   their CSS variables. Graphite is the default. The editor stays neutral independently of the dashboard.
 - **Dashboard tests use local fixtures.** No live cameras, Home Assistant installations, or external

@@ -183,9 +183,29 @@ try {
     animations: 'disabled',
     scale: 'css',
   });
+  const home = await context.newPage();
+  home.on('pageerror', (error) => errors.push(error.message));
+  await home.clock.setFixedTime(captureTime);
+  await home.setViewportSize({ width: 1440, height: 1000 });
+  await home.goto(`${origin}/demo?home`);
+  await expect(home.getByRole('heading', { name: 'Home, connected.', exact: true })).toBeVisible();
+  await home.evaluate(() => document.fonts.ready);
+  await shot(home, 'noticetv-home-widgets-editor.png');
+  await home.setViewportSize({ width: 1920, height: 1200 });
+  await home.getByRole('button', { name: 'Preview', exact: true }).click();
+  await shot(home.getByRole('dialog').locator('.dashboard'), 'noticetv-home-widgets.png');
+  await home.getByRole('dialog').getByRole('button', { name: 'month', exact: true }).click();
+  await shot(home.getByRole('dialog').locator('.dashboard'), 'noticetv-home-widgets-month.png');
+  await home.getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await home.goto(`${origin}/demo?home&cameras`);
+  await home.getByRole('button', { name: 'Preview', exact: true }).click();
+  await expect(
+    home.getByRole('dialog').getByAltText('Illustrated front-door preview'),
+  ).toBeVisible();
+  await shot(home.getByRole('dialog').locator('.dashboard'), 'noticetv-home-widgets-camera.png');
   assert.deepEqual(errors, [], 'Captures must not contain application errors.');
   assert.deepEqual(blocked, [], 'Documentation captures must not request external services.');
-  console.log(`Captured thirteen documentation screenshots in docs/images using fictional data.`);
+  console.log(`Captured seventeen documentation screenshots in docs/images using fictional data.`);
 } finally {
   await browser?.close();
   if (server.exitCode === null && server.signalCode === null) {

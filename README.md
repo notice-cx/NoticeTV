@@ -23,6 +23,11 @@ and preview the whole screen before publishing. Export a layout to keep it or sh
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | **Weather**     | Current conditions and a five-day forecast from [Open-Meteo](https://open-meteo.com/), with city search and Celsius/Fahrenheit settings. |
 | **Home Assistant** | Live sensor readings and entity status through one shared connection, with searchable entity selection and outage indicators. |
+| **Home weather** | HA forecasts and outdoor sensors, humidity, US AQI, a second location, sun times, and moon phases. |
+| **Connected calendar** | HA calendars, week/month views, source colors and filters, event details, and meeting reminders. |
+| **Indoor climate** | Measured room temperatures and CO₂ with 24-hour recorder history. |
+| **Readiness** | A 0–100 score, seven-day trend, and average from HA. |
+| **Home status & camera** | Contact and motion status, plus authenticated snapshots with update times and outage indicators. |
 | **Live video**  | HLS `.m3u8` streams, muted autoplay, fit/fill sizing, and recovery after playback interruptions.                                         |
 | **Agenda**      | Plans you enter in NoticeTV, a date rail, and a day-by-day view of the year's progress.                                                  |
 | **Note**        | Plain text for reminders, a message, or a thought for the day.                                                                           |
@@ -33,6 +38,17 @@ and preview the whole screen before publishing. Export a layout to keep it or sh
 
 HLS streams must be reachable from the screen and permit browser playback from your dashboard's
 address. Media plays directly in the browser; NoticeTV does not proxy or transcode it.
+
+**Home Assistant supplies the integrations.** Open **Add widget → Use Home layout** for weather,
+calendar, camera, climate, and readiness arranged together. Choose your HA entities in each card;
+the preset starts with empty source selections. Enable **Allow display interactions** to change
+calendar views, read event details, and enlarge snapshots on a paired screen.
+
+[![The Home layout with weather, connected calendars, camera, indoor climate, and readiness. All readings are fictional and the camera is illustrated.](docs/images/noticetv-home-widgets.png)](docs/images/noticetv-home-widgets.png)
+
+Explore the fictional [Home preview](http://localhost:3000/demo?home) on your local server, or see
+[the editor](docs/images/noticetv-home-widgets-editor.png) and
+[month view](docs/images/noticetv-home-widgets-month.png).
 
 ## Find your theme
 
@@ -58,8 +74,8 @@ entity values. Each browser loads standalone weather and HLS media directly from
 flowchart LR
     editor("Phone or laptop<br/>Dashboard editor") -->|"Save and publish"| server("NoticeTV server<br/>Saved dashboard")
     server -->|"Published layout"| screen("Paired TV<br/>Browser or NoticeTV OS")
-    ha("Home Assistant<br/>Devices and integrations") -->|"Authenticated live data"| server
-    server -->|"Selected published entity values"| screen
+    ha("Home Assistant<br/>Devices and integrations") -->|"Live states, forecasts,<br/>calendars, history, snapshots"| server
+    server -->|"Published widget data<br/>and authenticated snapshots"| screen
     sources("Weather and HLS<br/>Data sources") -->|"Load directly"| screen
     classDef default fill:#f5f6f8,stroke:#cfd6e2,color:#283346,stroke-width:1px,filter:none;
     classDef host fill:#e5edf9,stroke:#b8c9e3,color:#233858;
@@ -144,9 +160,10 @@ requirements, and appliance settings. Installing the OS erases the selected driv
 ## Current scope
 
 This is early software with one dashboard per server and multiple paired screens. Real dashboards
-start with empty source connections. Home Assistant currently supplies live entity states.
-HA-backed calendars, weather forecasts, history charts, and authenticated cameras/video are
-not implemented yet. Agenda events are entered manually.
+start with empty source connections. HA widgets support live states, forecasts, calendars, recorder
+history, and camera snapshots. Live WebRTC/go2rtc playback, the news header, market ticker, device
+controls, and the original dashboard’s four-column layout are not included yet. The standalone
+Agenda widget still accepts manually entered events.
 
 ## Contributing
 

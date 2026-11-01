@@ -20,3 +20,9 @@ all other external browser requests are blocked.
 port. Its account token, entities, readings, and private attribute markers are fictional. Unit
 and browser tests use it for authentication, state updates, outages, removals, and permission
 checks. It never connects to a real Home Assistant installation or external service.
+
+Its `rich` option supplies fictional weather, calendar, thermostat, CO₂, readiness, motion, and
+camera entities. It serves authenticated calendar/recorder REST responses and a one-pixel PNG;
+controls simulate partial outages, redirects, rejected MIME types, and oversized responses.
+The illustrations in `public/demo-front-door.svg` and the rich preview's sample readings are
+original fictional demo assets, not data or images from a real household.

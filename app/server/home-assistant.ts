@@ -119,7 +119,8 @@ function project(entity: HassEntity): HomeAssistantEntity | null {
 }
 
 class LiveConnection {
-  data: HomeAssistantData = { phase: 'connecting', receivedAt: null, entities: {} };
+  data: Omit<HomeAssistantData, 'entities'> = { phase: 'connecting', receivedAt: null };
+  states: Record<string, HassEntity> = {};
   private controller = new AbortController();
   private connection?: Connection;
   private heartbeat?: ReturnType<typeof setInterval>;
@@ -179,11 +180,10 @@ class LiveConnection {
     const pending: StateChangedEvent[] = [];
     let loading = true;
     const current = () => generation === this.generation && !this.controller.signal.aborted;
-    const update = (event: StateChangedEvent, entities: Record<string, HomeAssistantEntity>) => {
+    const update = (event: StateChangedEvent, entities: Record<string, HassEntity>) => {
       const { entity_id: id, new_state: value } = event.data;
       if (value) {
-        const entity = project(value);
-        if (entity) entities[id] = entity;
+        if (entityIdSchema.safeParse(id).success) entities[id] = value;
       } else delete entities[id];
     };
     // Subscribe before the snapshot, then replay intervening changes to avoid a missed update.
@@ -193,7 +193,7 @@ class LiveConnection {
           if (!current()) return;
           if (loading) pending.push(event);
           else {
-            update(event, this.data.entities);
+            update(event, this.states);
             this.data.receivedAt = new Date().toISOString();
           }
         },
@@ -207,14 +207,59 @@ class LiveConnection {
       this.controller.signal,
     );
     if (!current()) return;
-    const entities: Record<string, HomeAssistantEntity> = {};
+    const entities: Record<string, HassEntity> = {};
     for (const value of states) {
-      const entity = project(value);
-      if (entity) entities[entity.id] = entity;
+      if (entityIdSchema.safeParse(value.entity_id).success) entities[value.entity_id] = value;
     }
     for (const event of pending) update(event, entities);
     loading = false;
-    this.data = { phase: 'connected', receivedAt: new Date().toISOString(), entities };
+    this.states = entities;
+    this.data = { phase: 'connected', receivedAt: new Date().toISOString() };
+  }
+
+  async config(): Promise<unknown> {
+    if (!this.connection?.connected)
+      throw new HomeAssistantError('Home Assistant is reconnecting.');
+    try {
+      return await bounded(
+        this.connection.sendMessagePromise({ type: 'get_config' }),
+        this.controller.signal,
+      );
+    } catch (error) {
+      if (error instanceof HomeAssistantError && !this.controller.signal.aborted)
+        this.connection.reconnect(true);
+      throw error;
+    }
+  }
+
+  async forecast(entityId: string): Promise<unknown[]> {
+    const connection = this.connection;
+    if (!connection?.connected) throw new HomeAssistantError('Home Assistant is reconnecting.');
+    const features = Number(this.states[entityId]?.attributes.supported_features || 0);
+    const forecastType =
+      features & 1 ? 'daily' : features & 4 ? 'twice_daily' : features & 2 ? 'hourly' : null;
+    if (!forecastType) return [];
+    const signal = AbortSignal.any([this.controller.signal, AbortSignal.timeout(requestTimeout)]);
+    let receive!: (value: unknown[]) => void;
+    const first = new Promise<unknown[]>((resolve) => {
+      receive = resolve;
+    });
+    const subscription = connection.subscribeMessage<{ forecast: unknown[] | null }>(
+      (event) => receive(Array.isArray(event.forecast) ? event.forecast : []),
+      { type: 'weather/subscribe_forecast', entity_id: entityId, forecast_type: forecastType },
+      { resubscribe: false },
+    );
+    try {
+      await bounded(subscription, signal);
+      return await bounded(first, signal);
+    } catch (error) {
+      // A timed-out command cannot be cancelled in HA's protocol; reconnect to retire it.
+      if (error instanceof HomeAssistantError && !this.controller.signal.aborted)
+        connection.reconnect(true);
+      throw error;
+    } finally {
+      void subscription.then((unsubscribe) => unsubscribe()).catch(() => undefined);
+    }
   }
 
   close() {
@@ -225,6 +270,7 @@ class LiveConnection {
 }
 
 export class HomeAssistantConnection {
+  generation = 0;
   private credentials: Credentials | null = null;
   private live?: LiveConnection;
   private candidate?: LiveConnection;
@@ -256,12 +302,15 @@ export class HomeAssistantConnection {
       url: this.credentials?.url || null,
       phase: data.phase,
       receivedAt: data.receivedAt,
-      entityCount: Object.keys(this.live?.data.entities || {}).length,
+      entityCount: Object.keys(this.live?.states || {}).length,
     };
   }
 
   entities(): HomeAssistantEntity[] {
-    return structuredClone(Object.values(this.live?.data.entities || {}));
+    return Object.values(this.live?.states || {}).flatMap((value) => {
+      const entity = project(value);
+      return entity ? [entity] : [];
+    });
   }
 
   data(ids: string[]): HomeAssistantData {
@@ -271,7 +320,9 @@ export class HomeAssistantConnection {
       receivedAt: current?.receivedAt || null,
       entities: Object.fromEntries(
         ids.flatMap((id) =>
-          current?.entities[id] ? [[id, structuredClone(current.entities[id])]] : [],
+          this.live?.states[id] && project(this.live.states[id])
+            ? [[id, project(this.live.states[id])!]]
+            : [],
         ),
       ),
     };
@@ -297,6 +348,7 @@ export class HomeAssistantConnection {
         this.live?.close();
         this.credentials = credentials;
         this.live = candidate;
+        this.generation++;
       } catch (error) {
         candidate.close();
         throw error;
@@ -314,6 +366,7 @@ export class HomeAssistantConnection {
       this.live?.close();
       this.live = undefined;
       this.credentials = null;
+      this.generation++;
       return this.status();
     });
   }
@@ -323,6 +376,97 @@ export class HomeAssistantConnection {
     clearTimeout(this.retry);
     this.live?.close();
     this.candidate?.close();
+  }
+
+  // Server-only input for typed widget projections. Never serialize these raw states.
+  state(id: string): HassEntity | undefined {
+    const value = this.live?.states[id];
+    return value ? structuredClone(value) : undefined;
+  }
+
+  async configuration(): Promise<unknown> {
+    if (!this.live) throw new HomeAssistantError('Connect Home Assistant in Sources.');
+    return this.live.config();
+  }
+
+  async forecast(entityId: string): Promise<unknown[]> {
+    if (!this.live) throw new HomeAssistantError('Connect Home Assistant in Sources.');
+    entityIdSchema.parse(entityId);
+    if (!entityId.startsWith('weather.')) throw new HomeAssistantError('Choose a weather entity.');
+    return this.live.forecast(entityId);
+  }
+
+  async calendar(entityId: string, start: string, end: string): Promise<unknown> {
+    entityIdSchema.parse(entityId);
+    if (!entityId.startsWith('calendar.'))
+      throw new HomeAssistantError('Choose a calendar entity.');
+    const result = await this.json(`/api/calendars/${entityId}`, { start, end });
+    if (!Array.isArray(result))
+      throw new HomeAssistantError('Home Assistant returned unreadable calendar data.');
+    return result;
+  }
+
+  async history(entityIds: string[], start: string, end: string): Promise<unknown> {
+    for (const id of entityIds) entityIdSchema.parse(id);
+    return this.json(`/api/history/period/${encodeURIComponent(start)}`, {
+      filter_entity_id: entityIds.join(','),
+      end_time: end,
+      significant_changes_only: '0',
+    });
+  }
+
+  async snapshot(entityId: string) {
+    entityIdSchema.parse(entityId);
+    if (!entityId.startsWith('camera.')) throw new HomeAssistantError('Choose a camera entity.');
+    const result = await this.get(`/api/camera_proxy/${entityId}`, {});
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(result.type))
+      throw new HomeAssistantError('Home Assistant did not return a supported camera image.');
+    return result;
+  }
+
+  private async get(path: string, parameters: Record<string, string>) {
+    const credentials = this.credentials;
+    if (!credentials) throw new HomeAssistantError('Connect Home Assistant in Sources.');
+    try {
+      const url = new URL(path, credentials.url);
+      url.search = new URLSearchParams(parameters).toString();
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${credentials.token}` },
+        redirect: 'error',
+        signal: AbortSignal.timeout(requestTimeout),
+      });
+      if (!response.ok || !response.body) throw new Error();
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > 8 * 1024 * 1024) {
+          await reader.cancel();
+          throw new Error();
+        }
+        chunks.push(value);
+      }
+      return {
+        body: Buffer.concat(chunks),
+        type: response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() || '',
+      };
+    } catch {
+      throw new HomeAssistantError(
+        'Home Assistant could not supply this data. Check the connection and entity permissions.',
+      );
+    }
+  }
+
+  private async json(path: string, parameters: Record<string, string>): Promise<unknown> {
+    const result = await this.get(path, parameters);
+    try {
+      return JSON.parse(result.body.toString('utf8'));
+    } catch {
+      throw new HomeAssistantError('Home Assistant returned unreadable data.');
+    }
   }
 
   private reconnect(attempt = 0) {

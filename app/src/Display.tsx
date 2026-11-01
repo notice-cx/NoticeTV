@@ -64,7 +64,12 @@ export function Display({ onDisconnect }: { onDisconnect: () => void }) {
     );
   return (
     <main className="display-view" data-theme={board.theme} style={themeStyle(board.theme)}>
-      <ScaledBoard board={board} passive online={online} />
+      <ScaledBoard
+        board={board}
+        passive={!board.allowDisplayInteractions}
+        online={online}
+        published
+      />
     </main>
   );
 }

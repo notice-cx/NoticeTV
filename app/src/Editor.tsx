@@ -18,9 +18,11 @@ import {
   Settings2,
   ShieldCheck,
   X,
+  Home,
 } from 'lucide-react';
 import {
   createDashboard,
+  createHomeWidgets,
   createDemoDashboard,
   createWidget,
   dashboardSchema,
@@ -34,6 +36,7 @@ import { AccessForm } from './Login';
 import { BoardInspector, catalog, WidgetInspector } from './Inspector';
 import { Wordmark, CloudDrawing, ScaledBoard, Modal } from './ui';
 import { HomeAssistantSetup } from './HomeAssistant';
+import { createHomePreview } from '../shared/rich-demo';
 
 export function Editor({
   demo = false,
@@ -44,12 +47,16 @@ export function Editor({
 }) {
   const [document, setDocument] = useState<Document | null>(null);
   const [board, setBoard] = useState<DashboardData>(() =>
-    demo ? createDemoDashboard() : createDashboard(),
+    demo
+      ? new URLSearchParams(location.search).has('home')
+        ? createHomePreview(new URLSearchParams(location.search).has('cameras'))
+        : createDemoDashboard()
+      : createDashboard(),
   );
   const [selected, setSelected] = useState<string | null>(null);
   const [panel, setPanel] = useState<'settings' | 'widgets' | 'sources'>('settings');
   const [modal, setModal] = useState<
-    'library' | 'pair' | 'preview' | 'help' | 'demo' | 'reconnect' | null
+    'library' | 'home-layout' | 'pair' | 'preview' | 'help' | 'demo' | 'reconnect' | null
   >(null);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(demo);
@@ -486,8 +493,8 @@ export function Editor({
               <div className="source-info">
                 <ShieldCheck size={20} />
                 <p>
-                  Home Assistant data comes through the NoticeTV server. Weather and HLS streams
-                  load directly on each screen.
+                  The NoticeTV server needs access to Home Assistant. Each screen needs access to
+                  its Open-Meteo weather and HLS streams.
                 </p>
               </div>
             </div>
@@ -496,6 +503,7 @@ export function Editor({
           <WidgetInspector
             key={widget.id}
             demo={demo}
+            openSources={() => setPanel('sources')}
             widget={widget}
             index={board.widgets.findIndex((entry) => entry.id === widget.id)}
             total={board.widgets.length}
@@ -572,6 +580,16 @@ export function Editor({
           wide
         >
           <p className="modal-intro">A few considered pieces. A dashboard that feels like you.</p>
+          <div className="home-layout-callout">
+            <Home size={21} strokeWidth={1.4} />
+            <div>
+              <strong>A view of your home.</strong>
+              <p>Weather, calendar, camera, climate, and readiness in one layout.</p>
+            </div>
+            <button className="secondary-button" onClick={() => setModal('home-layout')}>
+              Use Home layout
+            </button>
+          </div>
           <div className="widget-catalog">
             {catalog.map((item) => {
               const Icon = item.icon;
@@ -591,6 +609,32 @@ export function Editor({
                 </button>
               );
             })}
+          </div>
+        </Modal>
+      )}
+      {modal === 'home-layout' && (
+        <Modal title="A view of your home." eyebrow="HOME LAYOUT" close={() => setModal(null)} wide>
+          <p className="modal-intro">
+            Replace your draft’s widgets with weather, calendar, camera, climate, and readiness.
+            Choose your Home Assistant entities in each widget. Published screens keep their current
+            layout until you publish.
+          </p>
+          <ScaledBoard board={{ ...createHomePreview(), theme: board.theme }} demo passive />
+          <div className="home-layout-actions">
+            <button className="secondary-button" onClick={() => setModal('library')}>
+              Back to widgets
+            </button>
+            <button
+              className="primary-button"
+              onClick={() => {
+                setBoard((old) => ({ ...old, widgets: createHomeWidgets() }));
+                setSelected(null);
+                setModal(null);
+                setToast('Home layout ready. Choose your Home Assistant sources.');
+              }}
+            >
+              Replace draft layout
+            </button>
           </div>
         </Modal>
       )}
@@ -651,7 +695,7 @@ export function Editor({
           fullscreen
         >
           <div className="preview-board">
-            <ScaledBoard board={board} demo={demo} passive />
+            <ScaledBoard board={board} demo={demo} passive={!board.allowDisplayInteractions} />
           </div>
           <p className="preview-caption">
             This is your current draft. Publish when you’re ready to put it on screen.
